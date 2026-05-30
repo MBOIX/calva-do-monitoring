@@ -1,12 +1,88 @@
-# Python
+# ─────────────────────────────────────────────────────────────
+# NOTE : data_cache/ est VOLONTAIREMENT versionné
+# (ce sont les données statiques servies par le site GitHub Pages).
+# ─────────────────────────────────────────────────────────────
+
+# ── Python ──
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.Python
+# Environnements virtuels
+.venv/
+venv/
+env/
+ENV/
+# Outils de test / lint / type-check
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# OS
-.DS_Store
+# ── JetBrains (IntelliJ IDEA, PyCharm, WebStorm, …) ──
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+# Fichiers JetBrains parfois partagés mais ici inutiles
+cmake-build-*/
+atlassian-ide-plugin.xml
 
-# Editor / local
+# ── VS Code ──
 .vscode/
-*.swp
+*.code-workspace
+.history/
 
-# NOTE: data_cache/ EST volontairement versionné (données statiques du site).
+# ── Autres éditeurs ──
+*.swp
+*.swo
+*~
+.*.swp
+*.sublime-project
+*.sublime-workspace
+.\#*
+
+# ── macOS ──
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Windows ──
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Linux ──
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ── Logs / temporaires ──
+*.log
+*.tmp
+*.bak
+*.pid
+
+# ── Node (au cas où des outils front seraient ajoutés) ──
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# ── Secrets / configuration locale (ne jamais committer) ──
+.env
+.env.*
+!.env.example
+*.local
+.claude/settings.local.json
