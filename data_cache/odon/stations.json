@@ -1,0 +1,17 @@
+{
+  "stations": [
+    {
+      "code": "I371201001",
+      "name": "Épinay-sur-Odon",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I264000101",
+      "name": "Gavrus [Pont Neuf]",
+      "dept": "14",
+      "has_Q": true
+    }
+  ],
+  "updated_at": "2026-05-30T13:35:34.030216"
+}

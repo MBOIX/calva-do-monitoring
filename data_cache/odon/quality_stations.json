@@ -1,0 +1,26 @@
+{
+  "stations": [
+    {
+      "code": "03244000",
+      "name": "L'ODON A BRETTEVILLE-SUR-ODON 1",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 1783
+    },
+    {
+      "code": "03243350",
+      "name": "L'ODON A EPINAY-SUR-ODON 1",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 1265
+    },
+    {
+      "code": "03243120",
+      "name": "L'ODON A JURQUES 1",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 145
+    }
+  ],
+  "updated_at": "2026-05-30T13:35:45.580395"
+}

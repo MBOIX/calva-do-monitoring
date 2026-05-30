@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+# Editor / local
+.vscode/
+*.swp
+
+# NOTE: data_cache/ EST volontairement versionné (données statiques du site).

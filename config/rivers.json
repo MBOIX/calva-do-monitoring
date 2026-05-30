@@ -1,0 +1,78 @@
+{
+  "rivers": [
+    {
+      "id": "orne",
+      "name": "Orne",
+      "region_label_by_dept": { "14": "Calvados", "61": "Orne" },
+      "quality_code": "I2--0200",
+      "stations": [
+        { "code": "I200101101", "name": "Belfonds", "dept": "61", "has_Q": true },
+        { "code": "I303101001", "name": "Argentan", "dept": "61", "has_Q": false },
+        { "code": "I312101002", "name": "La Courbe (Amont)", "dept": "61", "has_Q": true },
+        { "code": "I336101001", "name": "Mesnil-Villement", "dept": "14", "has_Q": true },
+        { "code": "I352102001", "name": "Thury-Harcourt", "dept": "14", "has_Q": true },
+        { "code": "I353101001", "name": "Grimbosq (barrage)", "dept": "14", "has_Q": true },
+        { "code": "I362101001", "name": "May-sur-Orne", "dept": "14", "has_Q": true },
+        { "code": "I362102001", "name": "Louvigny", "dept": "14", "has_Q": false },
+        { "code": "I374101001", "name": "Caen (Pont de Vaucelles)", "dept": "14", "has_Q": false }
+      ],
+      "narrative": {
+        "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie montrent toutes un recul du débit depuis 1999.",
+        "flowTrendNote": "L'étude nationale Explore2 (INRAE) prévoit -10% à -60% de débit pour le bassin Seine-Normandie d'ici 2100.",
+        "summerNote": "C'est ce qu'on appelle l'étiage : la période où la rivière est au plus bas. L'ouest du bassin, sur le massif armoricain (roche dure, peu de réserves souterraines), est le plus touché. En août 2025, 167 communes de l'Orne étaient en alerte sécheresse.",
+        "projectionInsight": {
+          "value": "-30 %",
+          "detail": "Selon l'étude Explore2 (INRAE, 2024), le débit d'été des rivières françaises pourrait baisser de 30% en moyenne d'ici 2100 (scénario fort). Pour le bassin Seine-Normandie, les réserves d'eau souterraines pourraient diminuer de 15 à 30% (GIEC Normand). La température en Normandie a déjà augmenté de +1,1°C et pourrait atteindre +2,2°C en été d'ici 2050 (INSEE/Météo France, 2026)."
+        },
+        "contextParagraph": "Ce constat rejoint les observations du GIEC Normand : sur les 25 rivières suivies en Normandie entre 1999 et 2020, toutes montrent une baisse de débit. La cause principale : le changement climatique modifie la répartition des pluies. Il pleut autant sur l'année, mais les étés sont plus secs et les hivers plus humides. L'eau de pluie hivernale ruisselle vite au lieu de s'infiltrer, et en été les réserves souterraines ne suffisent plus.",
+        "projectionsParagraph": "Pour l'avenir, l'étude nationale Explore2 (INRAE, 2024) prévoit une baisse du débit estival de -15% à -50% d'ici 2100 selon les scénarios. Le GIEC Normand estime que les réserves d'eau souterraine pourraient perdre 15 à 30% de leur capacité. L'Agence de l'Eau Seine-Normandie a adopté en 2023 une stratégie d'adaptation, et un contrat « Eau & Climat » de 3 millions d'euros a été signé pour le bassin amont de l'Orne.",
+        "sources": [
+          { "label": "Hub'Eau / Banque Hydro", "url": "https://hubeau.eaufrance.fr/page/api-hydrometrie" },
+          { "label": "HydroPortail - Orne à May-sur-Orne", "url": "https://www.hydro.eaufrance.fr/stationhydro/I362101001/synthese" },
+          { "label": "GIEC Normand - Rapport Eau", "url": "https://www.datanormandie.fr/sites/default/files/dataset/c47/493af-d297-4575-a8e4-80c48ab0283a/giec_eau.pdf" },
+          { "label": "Explore2 - INRAE (projections 2100)", "url": "https://www.ecologie.gouv.fr/politiques-publiques/explore2-impacts-du-changement-climatique-ressource-eau-horizon-2100" },
+          { "label": "INSEE Normandie - Températures 2050", "url": "https://www.insee.fr/fr/statistiques/8733930" },
+          { "label": "SDAGE Seine-Normandie 2022-2027", "url": "https://www.eau-seine-normandie.fr/domaines-d-action/sdage" },
+          { "label": "Stratégie adaptation Seine-Normandie", "url": "https://www.eau-seine-normandie.fr/domaines-d-action/strategie_adaptation_climatique" },
+          { "label": "Contrat Eau & Climat Orne Amont", "url": "https://eau-seine-normandie.fr/node/3950" },
+          { "label": "Préfecture Orne - Sécheresse", "url": "https://www.orne.gouv.fr/Actions-de-l-Etat/Environnement.-transition-energetique-et-prevention-des-risques/Protection-de-l-environnement/Eau-et-milieux-aquatiques/Gestion-quantitative-de-l-eau-secheresse" },
+          { "label": "ONDE - Étiages", "url": "https://onde.eaufrance.fr/" },
+          { "label": "LIFE Adapto - Estuaire Orne", "url": "https://www.lifeadapto.eu/estuaire-de-l-orne.html" },
+          { "label": "DRIAS-Eau (projections)", "url": "https://www.drias-eau.fr/" },
+          { "label": "Région Normandie - Eau potable", "url": "https://www.normandie.fr/eau-potable-en-normandie-la-pression-du-rechauffement-climatique" }
+        ]
+      }
+    },
+    {
+      "id": "odon",
+      "name": "Odon",
+      "region_label_by_dept": { "14": "Calvados" },
+      "quality_code": "I26-0400",
+      "stations": [
+        { "code": "I371201001", "name": "Épinay-sur-Odon", "dept": "14", "has_Q": true },
+        { "code": "I264000101", "name": "Gavrus [Pont Neuf]", "dept": "14", "has_Q": true }
+      ],
+      "narrative": {
+        "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie sur la période 1999-2020 montrent toutes un recul de leur débit, l'Odon faisant partie de ces cours d'eau bas-normands au régime pluvial océanique.",
+        "flowTrendNote": "L'étude nationale Explore2 (INRAE, 2024) prévoit une baisse des débits d'été d'environ -30 % (de -15 % à -50 %) à l'horizon 2100 pour les cours d'eau français, dont ceux du bassin Seine-Normandie auquel appartient l'Odon.",
+        "summerNote": "L'Odon est une petite rivière sensible à l'étiage : son débit minimal de basse eau (VCN3) tombe à 0,015 m³/s en année sèche, contre un débit moyen d'environ 1 m³/s. À l'été 2025, le Calvados a basculé en vigilance sécheresse dès le 4 juillet, et les secteurs Bessin et Virois sont passés en alerte le 22 août, avec des niveaux de cours d'eau parfois inférieurs à ceux de la sécheresse de 2022.",
+        "projectionInsight": {
+          "value": "-30 %",
+          "detail": "Selon Explore2 (INRAE, 2024), les débits d'été pourraient reculer d'environ -30 % (jusqu'à -50 %) sur le bassin Seine-Normandie d'ici 2100. Le GIEC Normand rappelle que la température moyenne en Normandie a déjà gagné +1,1 °C (1995-2024 vs 1965-1994) et pourrait progresser de +1,8 °C d'ici 2050, avec jusqu'à +2,2 °C l'été dans l'Orne voisine (INSEE/Météo France)."
+        },
+        "contextParagraph": "La baisse de niveau et de débit de l'Odon rejoint un constat régional. Le GIEC Normand a analysé 25 rivières réparties sur toute la Normandie entre 1999 et 2020 : toutes montrent un débit en recul. Fait notable, cette baisse ne s'explique pas par les pluies, qui ne diminuent pas nettement, mais par la hausse des températures et de l'évaporation, ainsi que par les prélèvements humains. Les pluies se redistribuent : hivers plus humides, étés plus secs, avec davantage de ruissellement et moins d'infiltration. L'Odon, petite rivière de 47 km au régime pluvial océanique qui rejoint l'Orne à Caen, est particulièrement vulnérable à ces étés secs car son débit d'étiage est déjà très faible.",
+        "projectionsParagraph": "Pour l'avenir, l'étude Explore2 (INRAE, 2024) anticipe une baisse des débits d'été d'environ -30 %, pouvant atteindre -50 %, à l'horizon 2100. La recharge des nappes souterraines qui soutiennent les rivières en été pourrait reculer de -15 % à -30 % selon le GIEC Normand. Face à ce double effet — moins d'eau de surface, moins d'eau souterraine —, l'Agence de l'eau Seine-Normandie déploie une stratégie d'adaptation visant à économiser et mieux partager la ressource. Les arrêtés sécheresse répétés dans le Calvados (vigilance dès juillet 2025, maintenue jusqu'en octobre) illustrent déjà cette tension croissante sur la ressource en eau.",
+        "sources": [
+          { "label": "Odon (rivière) — données hydrologiques (Wikipédia / Banque Hydro)", "url": "https://fr.wikipedia.org/wiki/Odon_(rivi%C3%A8re)" },
+          { "label": "Préfecture du Calvados — Sécheresse : alerte sur l'ouest du département (août 2025)", "url": "https://www.calvados.gouv.fr/Actualites/La-secheresse/Declenchement-de-l-alerte-secheresse-sur-l-ouest-du-departement" },
+          { "label": "Eau du Bassin Caennais — Vigilance sécheresse été 2025", "url": "https://www.eau-bassin-caennais.fr/vigilance-secheresse-ete-2025/" },
+          { "label": "GIEC Normand — L'eau : disponibilité, qualité, risques naturels (25 rivières 1999-2020)", "url": "https://www.datanormandie.fr/sites/default/files/dataset/c47/493af-d297-4575-a8e4-80c48ab0283a/giec_eau.pdf" },
+          { "label": "INSEE Analyses Normandie — Température +1,1 °C observé, +1,8 °C projeté en 2050", "url": "https://www.insee.fr/fr/statistiques/8733930" },
+          { "label": "Explore2 (INRAE / Ministère Transition écologique) — débits d'été -30 % d'ici 2100", "url": "https://www.ecologie.gouv.fr/politiques-publiques/explore2-impacts-du-changement-climatique-ressource-eau-horizon-2100" },
+          { "label": "Agence de l'eau Seine-Normandie — GIEC normand et adaptation", "url": "https://www.eau-seine-normandie.fr/actualites/GIEC-normand" },
+          { "label": "Banque des Territoires — Recharge des nappes -15 à -30 %", "url": "https://www.banquedesterritoires.fr/changement-climatique-la-recharge-des-nappes-deau-souterraines-pourrait-baisser-de-10-25-en-2070" }
+        ]
+      }
+    }
+  ]
+}

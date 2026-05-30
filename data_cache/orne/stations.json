@@ -1,0 +1,59 @@
+{
+  "stations": [
+    {
+      "code": "I200101101",
+      "name": "Belfonds",
+      "dept": "61",
+      "has_Q": true
+    },
+    {
+      "code": "I303101001",
+      "name": "Argentan",
+      "dept": "61",
+      "has_Q": false
+    },
+    {
+      "code": "I312101002",
+      "name": "La Courbe (Amont)",
+      "dept": "61",
+      "has_Q": true
+    },
+    {
+      "code": "I336101001",
+      "name": "Mesnil-Villement",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I352102001",
+      "name": "Thury-Harcourt",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I353101001",
+      "name": "Grimbosq (barrage)",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I362101001",
+      "name": "May-sur-Orne",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I362102001",
+      "name": "Louvigny",
+      "dept": "14",
+      "has_Q": false
+    },
+    {
+      "code": "I374101001",
+      "name": "Caen (Pont de Vaucelles)",
+      "dept": "14",
+      "has_Q": false
+    }
+  ],
+  "updated_at": "2026-05-01T15:42:24.201230"
+}

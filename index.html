@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calvados — Tableau de bord hydrologique</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-deep:#0a0f1a;
+  --bg-card:#0f1628;
+  --bg-card-hover:#141d35;
+  --border:#1a2744;
+  --border-light:#243354;
+  --text-primary:#d4dce8;
+  --text-secondary:#7b8da6;
+  --text-muted:#4a5d7a;
+  --accent-teal:#2dd4bf;
+  --accent-blue:#38bdf8;
+  --accent-indigo:#818cf8;
+  --danger:#f87171;
+  --surface-glow:rgba(45,212,191,0.04);
+  --font-display:'DM Serif Display',Georgia,serif;
+  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 2px 20px rgba(0,0,0,0.3),0 0 0 1px var(--border);
+}
+html{font-size:15px;-webkit-font-smoothing:antialiased}
+body{
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  font-family:var(--font-body);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:
+    radial-gradient(ellipse 120% 60% at 20% 0%,rgba(56,189,248,0.06),transparent),
+    radial-gradient(ellipse 80% 50% at 80% 100%,rgba(45,212,191,0.05),transparent),
+    radial-gradient(ellipse 60% 40% at 50% 50%,rgba(129,140,248,0.03),transparent);
+  pointer-events:none;z-index:0;
+}
+.app{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:1.5rem}
+.header{
+  padding:2rem 0 1.5rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:1.5rem;
+  position:relative;
+}
+.header-river{
+  position:absolute;top:0;right:0;width:300px;height:100%;overflow:hidden;opacity:0.12;pointer-events:none;
+}
+.header-river svg{width:100%;height:100%}
+.header h1{
+  font-family:var(--font-display);
+  font-size:2.2rem;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  background:linear-gradient(135deg,var(--text-primary) 30%,var(--accent-teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  line-height:1.2;
+}
+.header .subtitle{
+  font-size:0.85rem;
+  color:var(--text-secondary);
+  margin-top:0.4rem;
+  font-weight:300;
+  letter-spacing:0.02em;
+}
+.header .subtitle .hl{color:var(--accent-teal);font-weight:500}
+.river-switch{display:flex;align-items:center;gap:0.6rem;margin-top:1.1rem}
+.river-switch label{
+  font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text-muted);font-weight:600;
+}
+.river-switch select{
+  appearance:none;
+  background:var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b8da6' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border:1px solid var(--border-light);border-radius:var(--radius-sm);
+  padding:0.5rem 2.4rem 0.5rem 0.9rem;
+  color:var(--text-primary);font-family:var(--font-body);font-size:0.9rem;
+  cursor:pointer;min-width:180px;transition:border-color 0.2s;
+}
+.river-switch select:hover{border-color:var(--accent-teal)}
+.river-switch select:focus{outline:none;border-color:var(--accent-teal);box-shadow:0 0 0 3px rgba(45,212,191,0.1)}
+.state-message{text-align:center;padding:4rem 2rem}
+.state-message h2{font-family:var(--font-display);font-size:1.5rem;margin-bottom:1rem;color:var(--text-primary)}
+.state-message p{color:var(--text-secondary);line-height:1.7;max-width:520px;margin:0 auto}
+.state-message code{
+  display:inline-block;margin-top:1rem;padding:0.6rem 1.2rem;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-family:var(--font-mono);font-size:0.85rem;color:var(--accent-teal);
+}
+.controls{
+  display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;
+  padding:1.2rem 1.4rem;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:1.5rem;
+  box-shadow:var(--shadow);
+}
+.control-group{display:flex;flex-direction:column;gap:0.35rem}
+.control-group label{
+  font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text-muted);font-weight:600;
+}
+.control-group select{
+  appearance:none;
+  background:var(--bg-deep) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b8da6' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border:1px solid var(--border-light);border-radius:var(--radius-sm);
+  padding:0.55rem 2.4rem 0.55rem 0.9rem;
+  color:var(--text-primary);font-family:var(--font-body);font-size:0.85rem;
+  cursor:pointer;min-width:220px;transition:border-color 0.2s;
+}
+.control-group select:hover{border-color:var(--accent-teal)}
+.control-group select:focus{outline:none;border-color:var(--accent-teal);box-shadow:0 0 0 3px rgba(45,212,191,0.1)}
+.years-wrap{display:flex;flex-wrap:wrap;gap:0.35rem;max-width:600px}
+.year-pill{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  padding:0.35rem 0.7rem;border:1px solid var(--border-light);border-radius:20px;
+  font-size:0.78rem;font-family:var(--font-mono);font-weight:500;
+  color:var(--text-secondary);cursor:pointer;transition:all 0.2s;
+  user-select:none;background:transparent;
+}
+.year-pill:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+.year-pill.active{
+  border-color:var(--color,var(--accent-teal));
+  background:rgba(45,212,191,0.08);color:var(--text-primary);
+}
+.year-pill.active .pill-dot{background:var(--color,var(--accent-teal));box-shadow:0 0 6px var(--color,var(--accent-teal))}
+.pill-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);transition:all 0.2s}
+.actions{margin-left:auto;display:flex;gap:0.6rem;align-items:flex-end}
+.btn{
+  display:inline-flex;align-items:center;gap:0.45rem;
+  padding:0.55rem 1.1rem;border:1px solid var(--border-light);border-radius:var(--radius-sm);
+  background:transparent;color:var(--text-secondary);
+  font-family:var(--font-body);font-size:0.8rem;font-weight:500;
+  cursor:pointer;transition:all 0.2s;white-space:nowrap;
+}
+.btn:hover{border-color:var(--accent-teal);color:var(--text-primary);background:rgba(45,212,191,0.06)}
+.btn:active{transform:scale(0.97)}
+.btn.primary{
+  background:linear-gradient(135deg,rgba(45,212,191,0.15),rgba(56,189,248,0.1));
+  border-color:rgba(45,212,191,0.3);color:var(--accent-teal);
+}
+.btn.primary:hover{background:linear-gradient(135deg,rgba(45,212,191,0.25),rgba(56,189,248,0.15))}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+.btn.loading{pointer-events:none;opacity:0.7}
+.btn.loading svg.spin-icon{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.view-toggle{
+  display:inline-flex;border:1px solid var(--border-light);border-radius:var(--radius-sm);
+  padding:2px;background:var(--bg-deep);
+}
+.view-toggle button{
+  padding:0.45rem 0.85rem;border:none;background:transparent;
+  color:var(--text-secondary);font-family:var(--font-body);font-size:0.75rem;font-weight:500;
+  cursor:pointer;border-radius:4px;transition:all 0.2s;white-space:nowrap;
+}
+.view-toggle button.active{background:rgba(45,212,191,0.14);color:var(--accent-teal)}
+.view-toggle button:hover:not(.active){color:var(--text-primary)}
+.legend-band-swatch{
+  display:inline-block;width:18px;height:8px;border-radius:2px;vertical-align:middle;
+}
+.legend-band-line{
+  display:inline-block;width:18px;height:0;border-top:1.5px dashed rgba(212,220,232,0.85);vertical-align:middle;
+}
+.chart-panel{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.4rem;margin-bottom:1.5rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.chart-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(45,212,191,0.2),transparent);
+}
+.chart-title{font-family:var(--font-display);font-size:1.15rem;margin-bottom:0.25rem;color:var(--text-primary)}
+.chart-subtitle{font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;font-weight:300}
+.chart-container{position:relative;width:100%;height:408px}
+.no-data-msg{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:var(--text-muted);font-size:0.9rem;
+}
+.no-data-msg svg{width:48px;height:48px;margin-bottom:0.8rem;opacity:0.3}
+.analysis-panel{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.6rem;margin-bottom:1.5rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.analysis-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(129,140,248,0.25),transparent);
+}
+.analysis-title{font-family:var(--font-display);font-size:1.15rem;margin-bottom:0.25rem;color:var(--text-primary)}
+.analysis-subtitle{font-size:0.75rem;color:var(--text-muted);margin-bottom:1.2rem;font-weight:300}
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.insight-card{
+  padding:1rem 1.2rem;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:rgba(10,15,26,0.5);
+  transition:border-color 0.2s;
+}
+.insight-card:hover{border-color:var(--border-light)}
+.insight-card .ic-header{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem}
+.insight-card .ic-icon{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;flex-shrink:0;
+}
+.insight-card .ic-icon.down{background:rgba(248,113,113,0.12);color:#f87171}
+.insight-card .ic-icon.up{background:rgba(45,212,191,0.12);color:#2dd4bf}
+.insight-card .ic-icon.warn{background:rgba(251,191,36,0.12);color:#fbbf24}
+.insight-card .ic-icon.info{background:rgba(129,140,248,0.12);color:#818cf8}
+.insight-card .ic-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);font-weight:600}
+.insight-card .ic-value{
+  font-family:var(--font-mono);font-size:1.3rem;font-weight:500;
+  margin-bottom:0.35rem;line-height:1.2;
+}
+.insight-card .ic-value.negative{color:#f87171}
+.insight-card .ic-value.positive{color:#2dd4bf}
+.insight-card .ic-value.neutral{color:#fbbf24}
+.insight-card .ic-detail{font-size:0.78rem;color:var(--text-secondary);line-height:1.5}
+.insight-card .ic-detail strong{color:var(--text-primary);font-weight:500}
+.analysis-summary{
+  margin-top:1.2rem;padding:1rem 1.2rem;
+  border-radius:var(--radius-sm);border:1px dashed var(--border-light);
+  background:rgba(129,140,248,0.03);
+  font-size:0.82rem;line-height:1.7;color:var(--text-secondary);
+}
+.analysis-summary strong{color:var(--text-primary);font-weight:500}
+.analysis-summary p{margin-bottom:0.5rem}
+.analysis-summary p:last-child{margin-bottom:0}
+.analysis-sources{
+  margin-top:0.8rem;padding-top:0.8rem;border-top:1px dashed var(--border);
+  font-size:0.72rem;color:var(--text-muted);line-height:1.8;
+}
+.analysis-sources span{margin-right:0.2rem}
+.analysis-sources a{
+  color:var(--accent-blue);text-decoration:none;
+  border-bottom:1px solid rgba(56,189,248,0.2);
+  transition:border-color 0.2s,color 0.2s;
+  margin-right:0.6rem;
+}
+.analysis-sources a:hover{color:var(--accent-teal);border-bottom-color:var(--accent-teal)}
+.analysis-empty{color:var(--text-muted);font-size:0.85rem;font-style:italic;padding:1rem 0}
+.status-bar{
+  display:flex;flex-wrap:wrap;gap:1rem 2rem;padding:0.8rem 1.4rem;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono);
+}
+.status-item{display:flex;align-items:center;gap:0.4rem}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-teal)}
+.status-dot.warn{background:#fbbf24}
+.status-dot.off{background:var(--text-muted)}
+.progress-overlay{
+  position:fixed;inset:0;background:rgba(10,15,26,0.85);
+  display:flex;align-items:center;justify-content:center;
+  z-index:100;backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.progress-overlay.visible{opacity:1;pointer-events:auto}
+.progress-box{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:2rem 2.5rem;
+  text-align:center;min-width:320px;box-shadow:0 8px 40px rgba(0,0,0,0.5);
+}
+.progress-box h3{font-family:var(--font-display);font-size:1.1rem;margin-bottom:1rem}
+.progress-bar-track{width:100%;height:6px;background:var(--bg-deep);border-radius:3px;overflow:hidden;margin-bottom:0.8rem}
+.progress-bar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent-teal),var(--accent-blue));
+  border-radius:3px;transition:width 0.3s;
+}
+.progress-text{font-size:0.8rem;color:var(--text-secondary)}
+.legend-row{display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-top:0.8rem}
+@media(max-width:768px){
+  .app{padding:1rem}
+  .header h1{font-size:1.6rem}
+  .controls{flex-direction:column}
+  .control-group select{min-width:100%}
+  .actions{margin-left:0;width:100%;justify-content:stretch}
+  .actions .btn{flex:1;justify-content:center}
+  .chart-container{height:312px}
+  .years-wrap{max-width:100%}
+}
+@media(max-width:480px){.chart-container{height:264px}}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg-deep)}
+::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.5s ease-out both}
+.fade-in-d1{animation-delay:0.1s}
+.fade-in-d2{animation-delay:0.2s}
+.fade-in-d3{animation-delay:0.3s}
+.fade-in-d4{animation-delay:0.4s}
+.tab-bar{
+  display:flex;border-bottom:1px solid var(--border);
+  margin-bottom:1.5rem;gap:0;
+}
+.tab-btn{
+  padding:0.65rem 1.4rem;font-size:0.78rem;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--text-muted);background:none;border:none;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  cursor:pointer;transition:color 0.15s,border-color 0.15s;
+}
+.tab-btn:hover{color:var(--text-secondary)}
+.tab-btn.active{color:var(--accent-teal);border-bottom-color:var(--accent-teal)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.quality-controls{
+  display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;
+  padding:1.2rem 1.4rem;
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:1.5rem;box-shadow:var(--shadow);
+}
+.quality-no-data{
+  text-align:center;padding:4rem 2rem;color:var(--text-secondary);
+}
+.quality-no-data code{
+  display:inline-block;margin-top:1rem;padding:0.6rem 1.2rem;
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-family:var(--font-mono);font-size:0.85rem;color:var(--accent-teal);
+}
+.quality-chart-container{height:280px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header fade-in">
+    <div class="header-river">
+      <svg viewBox="0 0 300 120" fill="none">
+        <path d="M0 60 Q50 20,100 55 T200 50 T300 45" stroke="rgba(45,212,191,0.3)" stroke-width="1.5" fill="none">
+          <animate attributeName="d" values="M0 60 Q50 20,100 55 T200 50 T300 45;M0 55 Q50 30,100 60 T200 45 T300 55;M0 60 Q50 20,100 55 T200 50 T300 45" dur="8s" repeatCount="indefinite"/>
+        </path>
+        <path d="M0 70 Q60 40,120 65 T220 60 T300 58" stroke="rgba(56,189,248,0.2)" stroke-width="1" fill="none">
+          <animate attributeName="d" values="M0 70 Q60 40,120 65 T220 60 T300 58;M0 65 Q60 50,120 70 T220 55 T300 65;M0 70 Q60 40,120 65 T220 60 T300 58" dur="10s" repeatCount="indefinite"/>
+        </path>
+        <path d="M0 80 Q70 55,140 78 T260 72 T300 70" stroke="rgba(129,140,248,0.15)" stroke-width="0.8" fill="none">
+          <animate attributeName="d" values="M0 80 Q70 55,140 78 T260 72 T300 70;M0 75 Q70 65,140 82 T260 68 T300 78;M0 80 Q70 55,140 78 T260 72 T300 70" dur="12s" repeatCount="indefinite"/>
+        </path>
+      </svg>
+    </div>
+    <h1 id="river-title">Cours d'eau</h1>
+    <p class="subtitle">Tableau de bord hydrologique — <span class="hl" id="station-display">Chargement...</span></p>
+    <div class="river-switch">
+      <label for="river-select">Cours d'eau</label>
+      <select id="river-select"></select>
+    </div>
+  </header>
+  <div id="main-content">
+    <div class="state-message" id="loading-msg">
+      <h2>Chargement des donnees...</h2>
+      <p>Lecture du cache local</p>
+    </div>
+  </div>
+</div>
+<div class="progress-overlay" id="progress-overlay">
+  <div class="progress-box">
+    <h3 id="progress-title">Recuperation des donnees</h3>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill"></div></div>
+    <p class="progress-text" id="progress-text">Initialisation...</p>
+  </div>
+</div>
+
+<script>
+const YEAR_COLORS = [
+  '#2dd4bf','#38bdf8','#818cf8','#f472b6','#fb923c',
+  '#a3e635','#e879f9','#fbbf24','#34d399','#f87171',
+  '#67e8f9','#c084fc','#fdba74','#86efac','#fca5a5',
+  '#7dd3fc','#d8b4fe','#fde68a','#6ee7b7','#fda4af',
+];
+
+let rivers = [];
+let currentRiver = null;
+let stations = [];
+let currentStation = null;
+let heightData = null;
+let flowData = null;
+let selectedYears = new Set();
+let heightChart = null;
+let flowChart = null;
+let hydroViewMode = 'lines';      // 'lines' | 'bands'
+
+let qualityStations = [];
+let qualityData = {};             // { stationCode: parsed cache JSON }
+let currentQualityStation = null;
+let selectedQualityYears = new Set();
+let qualityCharts = {};           // { paramCode: Chart instance }
+let qualityViewMode = 'lines';    // 'lines' | 'bands'
+
+const QUALITY_PARAMS = [
+  { code: '1311', name: 'Oxygène dissous', unit: 'mg/L' },
+  { code: '1302', name: 'pH',              unit: '' },
+  { code: '1340', name: 'Nitrates',        unit: 'mg/L NO₃' },
+  { code: '1339', name: 'Nitrites',        unit: 'mg/L NO₂' },
+  { code: '1335', name: 'Ammonium',        unit: 'mg/L NH₄' },
+];
+const MONTH_LABELS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+function escapeText(str) {
+  const el = document.createElement('span');
+  el.textContent = str;
+  return el.textContent;
+}
+
+function getISOWeek(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function buildWeekLabels() {
+  const labels = [];
+  for (let w = 1; w <= 53; w++) labels.push('S' + w);
+  return labels;
+}
+
+function aggregateWeekly(records, years) {
+  const result = {};
+  for (const year of years) {
+    result[year] = {};
+    for (let w = 1; w <= 53; w++) result[year][w] = [];
+  }
+  for (const r of records) {
+    if (r.value === null || r.value === undefined || !r.date) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    if (!years.has(y)) continue;
+    const week = getISOWeek(r.date);
+    if (week >= 1 && week <= 53) result[y][week].push(r.value);
+  }
+  const datasets = {};
+  for (const year of years) {
+    datasets[year] = [];
+    for (let w = 1; w <= 53; w++) {
+      const vals = result[year][w];
+      datasets[year].push(vals.length === 0 ? null : Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10);
+    }
+  }
+  return datasets;
+}
+
+function getAvailableYears(records) {
+  const years = new Set();
+  for (const r of records) {
+    if (r.date) years.add(parseInt(r.date.substring(0, 4)));
+  }
+  return [...years].sort();
+}
+
+function riverDataPath(file) {
+  return 'data_cache/' + currentRiver.id + '/' + file;
+}
+
+function riverLabel() {
+  // L'Orne, L'Odon — les deux noms s'élident ; suffisant pour les rivières gérées.
+  return currentRiver ? "l'" + currentRiver.name : 'la rivière';
+}
+
+function narrativeNote(key) {
+  return (currentRiver && currentRiver.narrative && currentRiver.narrative[key]) || '';
+}
+
+async function loadRivers() {
+  const resp = await fetch('config/rivers.json');
+  if (!resp.ok) throw new Error('config/rivers.json introuvable');
+  return (await resp.json()).rivers;
+}
+
+async function loadStations() {
+  const resp = await fetch(riverDataPath('stations.json'));
+  if (!resp.ok) throw new Error('stations.json introuvable');
+  return (await resp.json()).stations;
+}
+
+async function loadCacheFile(stationCode, grandeur) {
+  const resp = await fetch(riverDataPath(stationCode + '_' + grandeur + '.json'));
+  if (!resp.ok) return null;
+  return await resp.json();
+}
+
+function makeChartConfig(unit, datasets, weekLabels) {
+  const monthTicks = [];
+  const monthNames = ['Jan','Fev','Mar','Avr','Mai','Jun','Jul','Aou','Sep','Oct','Nov','Dec'];
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(2024, m, 4);
+    const dayOfYear = Math.floor((d - new Date(2024, 0, 1)) / 86400000);
+    monthTicks.push({ week: Math.floor(dayOfYear / 7) + 1, label: monthNames[m] });
+  }
+  return {
+    type: 'line',
+    data: { labels: weekLabels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,22,40,0.95)',
+          borderColor: 'rgba(45,212,191,0.2)',
+          borderWidth: 1,
+          titleFont: { family: "'IBM Plex Mono',monospace", size: 12 },
+          bodyFont: { family: "'IBM Plex Sans',sans-serif", size: 12 },
+          padding: 12, cornerRadius: 8,
+          filter(item) {
+            const ds = item.dataset;
+            if (ds._band && ds._bandRole !== 'p50') return false;
+            return true;
+          },
+          callbacks: {
+            title(items) {
+              if (!items.length) return '';
+              const week = items[0].dataIndex + 1;
+              const s = new Date(2024, 0, 1 + (week - 1) * 7);
+              const e = new Date(s.getTime() + 6 * 86400000);
+              const fmt = d => d.getDate() + '/' + (d.getMonth() + 1);
+              return 'Semaine ' + week + ' (' + fmt(s) + ' \u2014 ' + fmt(e) + ')';
+            },
+            label(ctx) {
+              if (ctx.raw === null || ctx.raw === undefined) return null;
+              return ' ' + ctx.dataset.label + ': ' + ctx.raw.toLocaleString('fr-FR') + ' ' + unit;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(26,39,68,0.5)', lineWidth: 0.5 },
+          ticks: {
+            color: '#4a5d7a', font: { family: "'IBM Plex Mono',monospace", size: 10 },
+            maxRotation: 0, autoSkip: false,
+            callback(val, index) {
+              const m = monthTicks.find(m => m.week === index + 1);
+              return m ? m.label : '';
+            },
+          },
+          border: { color: 'rgba(26,39,68,0.6)' },
+        },
+        y: {
+          grid: { color: 'rgba(26,39,68,0.4)', lineWidth: 0.5 },
+          ticks: {
+            color: '#4a5d7a', font: { family: "'IBM Plex Mono',monospace", size: 10 },
+            callback: v => v.toLocaleString('fr-FR'),
+          },
+          title: {
+            display: true, text: unit, color: '#7b8da6',
+            font: { family: "'IBM Plex Sans',sans-serif", size: 12 },
+          },
+          border: { color: 'rgba(26,39,68,0.6)' },
+        },
+      },
+    },
+  };
+}
+
+function buildDatasets(weeklyData, sortedYears) {
+  return sortedYears.map((year, i) => ({
+    label: String(year),
+    data: weeklyData[year],
+    borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    backgroundColor: YEAR_COLORS[i % YEAR_COLORS.length] + '18',
+    borderWidth: 1.8, tension: 0.3, pointRadius: 0,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    pointHoverBorderColor: '#0f1628', pointHoverBorderWidth: 2,
+    spanGaps: true,
+  }));
+}
+
+function buildHighlightDatasets(weeklyData, sortedYears) {
+  return sortedYears.map((year, i) => ({
+    label: String(year),
+    data: weeklyData[year],
+    borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    backgroundColor: 'transparent',
+    borderWidth: 2.2, tension: 0.3, pointRadius: 0,
+    pointHoverRadius: 5,
+    pointHoverBackgroundColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    pointHoverBorderColor: '#0f1628', pointHoverBorderWidth: 2,
+    spanGaps: true, order: 1,
+  }));
+}
+
+function computePercentiles(values, percentiles) {
+  if (!values || values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const out = {};
+  for (const p of percentiles) {
+    const idx = (p / 100) * (sorted.length - 1);
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    out[p] = lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  }
+  return out;
+}
+
+function aggregateWeeklyPercentiles(records) {
+  const buckets = Array.from({ length: 53 }, () => []);
+  for (const r of records) {
+    if (r.value === null || r.value === undefined || !r.date) continue;
+    const w = getISOWeek(r.date);
+    if (w >= 1 && w <= 53) buckets[w - 1].push(r.value);
+  }
+  const round = v => v === null ? null : Math.round(v * 10) / 10;
+  const out = { p10: [], p25: [], p50: [], p75: [], p90: [], n: [] };
+  for (let i = 0; i < 53; i++) {
+    const p = computePercentiles(buckets[i], [10, 25, 50, 75, 90]);
+    out.p10.push(p ? round(p[10]) : null);
+    out.p25.push(p ? round(p[25]) : null);
+    out.p50.push(p ? round(p[50]) : null);
+    out.p75.push(p ? round(p[75]) : null);
+    out.p90.push(p ? round(p[90]) : null);
+    out.n.push(buckets[i].length);
+  }
+  return out;
+}
+
+function aggregateMonthlyPercentiles(records) {
+  const buckets = Array.from({ length: 12 }, () => []);
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const m = parseInt(r.date.substring(5, 7)) - 1;
+    if (m >= 0 && m < 12) buckets[m].push(r.value);
+  }
+  const round = v => v === null ? null : Math.round(v * 100) / 100;
+  const out = { p10: [], p25: [], p50: [], p75: [], p90: [], n: [] };
+  for (let i = 0; i < 12; i++) {
+    const p = computePercentiles(buckets[i], [10, 25, 50, 75, 90]);
+    out.p10.push(p ? round(p[10]) : null);
+    out.p25.push(p ? round(p[25]) : null);
+    out.p50.push(p ? round(p[50]) : null);
+    out.p75.push(p ? round(p[75]) : null);
+    out.p90.push(p ? round(p[90]) : null);
+    out.n.push(buckets[i].length);
+  }
+  return out;
+}
+
+function buildBandDatasets(pct) {
+  const outer = 'rgba(56,189,248,';   // bleu accent pour P10–P90
+  const inner = 'rgba(45,212,191,';   // teal accent pour P25–P75
+  return [
+    {
+      label: 'P90', data: pct.p90,
+      borderColor: outer + '0.25)', backgroundColor: outer + '0.10)',
+      borderWidth: 0.5, pointRadius: 0, tension: 0.35, fill: false, spanGaps: true,
+      order: 20, _band: true, _bandRole: 'p90',
+    },
+    {
+      label: 'P10–P90 (extrêmes)', data: pct.p10,
+      borderColor: outer + '0.25)', backgroundColor: outer + '0.10)',
+      borderWidth: 0.5, pointRadius: 0, tension: 0.35, fill: '-1', spanGaps: true,
+      order: 19, _band: true, _bandRole: 'p10',
+    },
+    {
+      label: 'P75', data: pct.p75,
+      borderColor: inner + '0.5)', backgroundColor: inner + '0.22)',
+      borderWidth: 0.5, pointRadius: 0, tension: 0.35, fill: false, spanGaps: true,
+      order: 18, _band: true, _bandRole: 'p75',
+    },
+    {
+      label: 'P25–P75 (normale)', data: pct.p25,
+      borderColor: inner + '0.5)', backgroundColor: inner + '0.22)',
+      borderWidth: 0.5, pointRadius: 0, tension: 0.35, fill: '-1', spanGaps: true,
+      order: 17, _band: true, _bandRole: 'p25',
+    },
+    {
+      label: 'Médiane historique', data: pct.p50,
+      borderColor: 'rgba(212,220,232,0.85)', backgroundColor: 'transparent',
+      borderWidth: 1.6, borderDash: [4, 4], pointRadius: 0, tension: 0.35, fill: false, spanGaps: true,
+      order: 16, _band: true, _bandRole: 'p50',
+    },
+  ];
+}
+
+// ─── DOM building (safe, no innerHTML with untrusted data) ───
+
+function createEl(tag, attrs, children) {
+  const el = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'className') el.className = v;
+      else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+      else if (k === 'textContent') el.textContent = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
+      else el.setAttribute(k, v);
+    }
+  }
+  if (children) {
+    for (const c of Array.isArray(children) ? children : [children]) {
+      if (typeof c === 'string') el.appendChild(document.createTextNode(c));
+      else if (c) el.appendChild(c);
+    }
+  }
+  return el;
+}
+
+function renderDashboard() {
+  const main = document.getElementById('main-content');
+  main.textContent = '';
+
+  // Tab bar
+  const tabBar = createEl('div', { className: 'tab-bar' }, [
+    createEl('button', { className: 'tab-btn active', textContent: 'Hydrologie', onClick: () => switchTab('hydro') }),
+    createEl('button', { className: 'tab-btn', textContent: 'Qualité de l\'eau', onClick: () => switchTab('quality') }),
+  ]);
+  main.appendChild(tabBar);
+
+  const tabHydro = createEl('div', { className: 'tab-pane active', id: 'tab-hydro' });
+  const tabQuality = createEl('div', { className: 'tab-pane', id: 'tab-quality' });
+  main.appendChild(tabHydro);
+  main.appendChild(tabQuality);
+
+  buildHydroTab(tabHydro);
+  buildQualityTab(tabQuality);
+}
+
+function buildHydroTab(container) {
+  // Controls
+  const stationSelect = createEl('select', { id: 'station-select' });
+  stations.forEach(s => {
+    const opt = createEl('option', { value: s.code, textContent: s.name + ' (' + s.dept + ')' + (s.has_Q ? '' : ' \u2014 H uniquement') });
+    stationSelect.appendChild(opt);
+  });
+  if (currentStation) stationSelect.value = currentStation.code;
+  stationSelect.addEventListener('change', () => switchStation(stationSelect.value));
+
+  const yearsWrap = createEl('div', { className: 'years-wrap', id: 'years-wrap' });
+
+  const refreshIcon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  refreshIcon.setAttribute('viewBox','0 0 24 24');
+  refreshIcon.setAttribute('fill','none');
+  refreshIcon.setAttribute('stroke','currentColor');
+  refreshIcon.setAttribute('stroke-width','2');
+  refreshIcon.classList.add('spin-icon');
+  const path1 = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path1.setAttribute('d','M21 12a9 9 0 11-3.4-7.05');
+  const poly1 = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  poly1.setAttribute('points','21 3 21 9 15 9');
+  refreshIcon.appendChild(path1);
+  refreshIcon.appendChild(poly1);
+
+  const hydroLinesBtn = createEl('button', {
+    className: hydroViewMode === 'lines' ? 'active' : '',
+    textContent: 'Lignes',
+    'data-mode': 'lines',
+    onClick: () => setHydroViewMode('lines'),
+  });
+  const hydroBandsBtn = createEl('button', {
+    className: hydroViewMode === 'bands' ? 'active' : '',
+    textContent: 'Bandes climato',
+    'data-mode': 'bands',
+    onClick: () => setHydroViewMode('bands'),
+  });
+  const hydroToggle = createEl('div', { className: 'view-toggle', id: 'hydro-view-toggle' }, [
+    hydroLinesBtn, hydroBandsBtn,
+  ]);
+
+  const controls = createEl('div', { className: 'controls fade-in fade-in-d1' }, [
+    createEl('div', { className: 'control-group' }, [
+      createEl('label', { textContent: 'Station' }),
+      stationSelect,
+    ]),
+    createEl('div', { className: 'control-group', style: { flex: '1', minWidth: '200px' } }, [
+      createEl('label', { textContent: 'Annees' }),
+      yearsWrap,
+    ]),
+    createEl('div', { className: 'control-group' }, [
+      createEl('label', { textContent: 'Affichage' }),
+      hydroToggle,
+    ]),
+    createEl('div', { className: 'actions' }, [
+      createEl('button', { className: 'btn', id: 'btn-select-5', textContent: '5 ans', onClick: () => selectLastNYears(5) }),
+      createEl('button', { className: 'btn', id: 'btn-select-10', textContent: '10 ans', onClick: () => selectLastNYears(10) }),
+      createEl('button', { className: 'btn', id: 'btn-select-15', textContent: '15 ans', onClick: () => selectLastNYears(15) }),
+      createEl('button', { className: 'btn', id: 'btn-select-all', textContent: 'Tout', onClick: selectAllYears }),
+      createEl('button', { className: 'btn', id: 'btn-deselect', textContent: 'Aucun', onClick: deselectAllYears }),
+      createEl('button', { className: 'btn primary', id: 'btn-refresh', onClick: refreshFromAPI }, [
+        refreshIcon,
+        document.createTextNode(' Actualiser'),
+      ]),
+    ]),
+  ]);
+  container.appendChild(controls);
+
+  // Height chart panel
+  const heightCanvas = createEl('canvas', { id: 'chart-height' });
+  const heightLegend = createEl('div', { className: 'legend-row', id: 'legend-height' });
+  const heightPanel = createEl('div', { className: 'chart-panel fade-in fade-in-d2' }, [
+    createEl('div', { className: 'chart-title', textContent: "Hauteur d'eau" }),
+    createEl('div', { className: 'chart-subtitle', textContent: 'Hauteur maximale instantanee journaliere \u2014 moyenne hebdomadaire' }),
+    createEl('div', { className: 'chart-container' }, [heightCanvas]),
+    heightLegend,
+  ]);
+  container.appendChild(heightPanel);
+
+  // Flow chart panel
+  const flowCanvas = createEl('canvas', { id: 'chart-flow' });
+  const noFlowIcon = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  noFlowIcon.setAttribute('viewBox','0 0 24 24');
+  noFlowIcon.setAttribute('fill','none');
+  noFlowIcon.setAttribute('stroke','currentColor');
+  noFlowIcon.setAttribute('stroke-width','1.5');
+  const circlePath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  circlePath.setAttribute('d','M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z');
+  noFlowIcon.appendChild(circlePath);
+
+  const noFlowMsg = createEl('div', { className: 'no-data-msg', id: 'no-flow-msg', style: { display: 'none' } }, [
+    noFlowIcon,
+    createEl('span', { textContent: 'Pas de donnees de debit pour cette station' }),
+  ]);
+
+  const flowLegend = createEl('div', { className: 'legend-row', id: 'legend-flow' });
+  const flowPanel = createEl('div', { className: 'chart-panel fade-in fade-in-d3', id: 'flow-panel' }, [
+    createEl('div', { className: 'chart-title', textContent: 'Debit' }),
+    createEl('div', { className: 'chart-subtitle', textContent: 'Debit moyen journalier \u2014 moyenne hebdomadaire' }),
+    createEl('div', { className: 'chart-container', id: 'flow-container' }, [flowCanvas, noFlowMsg]),
+    flowLegend,
+  ]);
+  container.appendChild(flowPanel);
+
+  // Analysis panel
+  const analysisContent = createEl('div', { id: 'analysis-content' });
+  const analysisPanel = createEl('div', { className: 'analysis-panel fade-in fade-in-d4', id: 'analysis-panel' }, [
+    createEl('div', { className: 'analysis-title', textContent: 'Analyse climatique et hydrologique' }),
+    createEl('div', { className: 'analysis-subtitle', textContent: 'Tendances calculees a partir des donnees historiques de la station' }),
+    analysisContent,
+  ]);
+  container.appendChild(analysisPanel);
+
+  // Status bar
+  const statusBar = createEl('div', { className: 'status-bar fade-in fade-in-d4', id: 'status-bar' });
+  container.appendChild(statusBar);
+}
+
+// ─── Quality tab ───
+
+function buildQualityTab(container) {
+  if (qualityStations.length === 0) {
+    container.appendChild(createEl('div', { className: 'quality-no-data' }, [
+      createEl('p', { textContent: 'Données qualité non disponibles. Exécutez d\'abord le script de fetch :' }),
+      createEl('code', { textContent: 'python3 scripts/fetch_quality_data.py' }),
+    ]));
+    return;
+  }
+
+  // Station selector
+  const stationSel = createEl('select', { id: 'quality-station-select' });
+  qualityStations.forEach(s => {
+    stationSel.appendChild(createEl('option', { value: s.code, textContent: s.name }));
+  });
+  stationSel.addEventListener('change', () => switchQualityStation(stationSel.value));
+
+  const yearsWrap = createEl('div', { className: 'years-wrap', id: 'quality-years-wrap' });
+
+  const qualityLinesBtn = createEl('button', {
+    className: qualityViewMode === 'lines' ? 'active' : '',
+    textContent: 'Lignes',
+    'data-mode': 'lines',
+    onClick: () => setQualityViewMode('lines'),
+  });
+  const qualityBandsBtn = createEl('button', {
+    className: qualityViewMode === 'bands' ? 'active' : '',
+    textContent: 'Bandes climato',
+    'data-mode': 'bands',
+    onClick: () => setQualityViewMode('bands'),
+  });
+  const qualityToggle = createEl('div', { className: 'view-toggle', id: 'quality-view-toggle' }, [
+    qualityLinesBtn, qualityBandsBtn,
+  ]);
+
+  const controls = createEl('div', { className: 'controls fade-in fade-in-d1' }, [
+    createEl('div', { className: 'control-group' }, [
+      createEl('label', { textContent: 'Station' }),
+      stationSel,
+    ]),
+    createEl('div', { className: 'control-group', style: { flex: '1', minWidth: '200px' } }, [
+      createEl('label', { textContent: 'Années' }),
+      yearsWrap,
+    ]),
+    createEl('div', { className: 'control-group' }, [
+      createEl('label', { textContent: 'Affichage' }),
+      qualityToggle,
+    ]),
+    createEl('div', { className: 'actions' }, [
+      createEl('button', { className: 'btn', textContent: '5 ans',  onClick: () => selectLastNQualityYears(5) }),
+      createEl('button', { className: 'btn', textContent: '10 ans', onClick: () => selectLastNQualityYears(10) }),
+      createEl('button', { className: 'btn', textContent: 'Tout',   onClick: selectAllQualityYears }),
+      createEl('button', { className: 'btn', textContent: 'Aucun',  onClick: deselectAllQualityYears }),
+    ]),
+  ]);
+  container.appendChild(controls);
+
+  // One chart panel per parameter
+  QUALITY_PARAMS.forEach((param, i) => {
+    const canvas = createEl('canvas', { id: `chart-quality-${param.code}` });
+    const legend = createEl('div', { className: 'legend-row', id: `legend-quality-${param.code}` });
+    const subtitle = param.unit
+      ? `Médiane mensuelle — ${param.unit} — par année sélectionnée`
+      : 'Médiane mensuelle par année sélectionnée';
+    const panel = createEl('div', { className: `chart-panel fade-in fade-in-d${Math.min(i + 2, 4)}` }, [
+      createEl('div', { className: 'chart-title', textContent: param.name }),
+      createEl('div', { className: 'chart-subtitle', textContent: subtitle }),
+      createEl('div', { className: 'chart-container quality-chart-container' }, [canvas]),
+      legend,
+    ]);
+    container.appendChild(panel);
+  });
+}
+
+async function loadQualityStations() {
+  const resp = await fetch(riverDataPath('quality_stations.json'));
+  if (!resp.ok) return [];
+  const json = await resp.json();
+  return json.stations || [];
+}
+
+async function loadQualityData(stationCode) {
+  const resp = await fetch(riverDataPath(stationCode + '_quality.json'));
+  if (!resp.ok) return null;
+  return await resp.json();
+}
+
+function getQualityAvailableYears(cache) {
+  const yearsSet = new Set();
+  for (const param of QUALITY_PARAMS) {
+    const pdata = cache.parameters && cache.parameters[param.code];
+    if (!pdata || !pdata.records) continue;
+    for (const r of pdata.records) {
+      if (r.date && r.value !== null && r.value !== undefined)
+        yearsSet.add(parseInt(r.date.substring(0, 4)));
+    }
+  }
+  return [...yearsSet].sort((a, b) => a - b);
+}
+
+function aggregateMonthly(records, years) {
+  // Returns { monthIndex: { year: median } } for monthIndex 0..11
+  const buckets = {};
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const year = parseInt(r.date.substring(0, 4));
+    if (!years.has(year)) continue;
+    const month = parseInt(r.date.substring(5, 7)) - 1; // 0-based
+    if (!buckets[month]) buckets[month] = {};
+    if (!buckets[month][year]) buckets[month][year] = [];
+    buckets[month][year].push(r.value);
+  }
+  const result = {};
+  for (let m = 0; m < 12; m++) {
+    result[m] = {};
+    if (!buckets[m]) continue;
+    for (const [year, vals] of Object.entries(buckets[m])) {
+      const sorted = [...vals].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      result[m][parseInt(year)] = sorted.length % 2 === 0
+        ? Math.round(((sorted[mid - 1] + sorted[mid]) / 2) * 100) / 100
+        : Math.round(sorted[mid] * 100) / 100;
+    }
+  }
+  return result;
+}
+
+function buildQualityDatasets(monthlyData, sortedYears) {
+  return sortedYears.map((year, i) => ({
+    label: String(year),
+    data: Array.from({ length: 12 }, (_, m) => {
+      const v = monthlyData[m] && monthlyData[m][year];
+      return v !== undefined ? v : null;
+    }),
+    borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    tension: 0.3,
+    spanGaps: true,
+  }));
+}
+
+function buildHighlightQualityDatasets(monthlyData, sortedYears) {
+  return sortedYears.map((year, i) => ({
+    label: String(year),
+    data: Array.from({ length: 12 }, (_, m) => {
+      const v = monthlyData[m] && monthlyData[m][year];
+      return v !== undefined ? v : null;
+    }),
+    borderColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    backgroundColor: 'transparent',
+    borderWidth: 2.2,
+    pointRadius: 4.5,
+    pointHoverRadius: 6,
+    pointBackgroundColor: YEAR_COLORS[i % YEAR_COLORS.length],
+    tension: 0.3,
+    spanGaps: true, order: 1,
+  }));
+}
+
+function makeQualityChartConfig(unit, datasets) {
+  return {
+    type: 'line',
+    data: { labels: MONTH_LABELS, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15,22,40,0.95)',
+          borderColor: 'rgba(26,39,68,0.8)',
+          borderWidth: 1,
+          padding: 10,
+          titleColor: '#7b8da6',
+          bodyColor: '#d4dce8',
+          titleFont: { family: "'IBM Plex Mono',monospace", size: 11 },
+          bodyFont: { family: "'IBM Plex Mono',monospace", size: 12 },
+          filter(item) {
+            const ds = item.dataset;
+            if (ds._band && ds._bandRole !== 'p50') return false;
+            return true;
+          },
+          callbacks: {
+            label: item => {
+              const v = item.raw;
+              if (v === null || v === undefined) return null;
+              return ` ${item.dataset.label} : ${v.toLocaleString('fr-FR')}${unit ? ' ' + unit : ''}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(26,39,68,0.5)' },
+          ticks: { color: '#4a5d7a', font: { family: "'IBM Plex Mono',monospace", size: 10 } },
+        },
+        y: {
+          grid: { color: 'rgba(26,39,68,0.4)' },
+          ticks: {
+            color: '#4a5d7a',
+            font: { family: "'IBM Plex Mono',monospace", size: 10 },
+            callback: v => v.toLocaleString('fr-FR') + (unit ? ' ' + unit : ''),
+          },
+        },
+      },
+    },
+  };
+}
+
+function updateQualityCharts() {
+  if (!currentQualityStation) return;
+  const cache = qualityData[currentQualityStation.code];
+  if (!cache) return;
+  const sortedYears = [...selectedQualityYears].sort((a, b) => a - b);
+  const useBands = qualityViewMode === 'bands';
+
+  for (const param of QUALITY_PARAMS) {
+    if (qualityCharts[param.code]) { qualityCharts[param.code].destroy(); delete qualityCharts[param.code]; }
+    const canvas = document.getElementById(`chart-quality-${param.code}`);
+    if (!canvas) continue;
+
+    const pdata = cache.parameters && cache.parameters[param.code];
+    const records = pdata ? pdata.records : [];
+    const monthly = aggregateMonthly(records, selectedQualityYears);
+
+    let datasets;
+    if (useBands) {
+      const pct = aggregateMonthlyPercentiles(records);
+      datasets = [...buildBandDatasets(pct), ...buildHighlightQualityDatasets(monthly, sortedYears)];
+    } else {
+      datasets = buildQualityDatasets(monthly, sortedYears);
+    }
+
+    if (datasets.length > 0) {
+      qualityCharts[param.code] = new Chart(canvas, makeQualityChartConfig(param.unit, datasets));
+    }
+
+    renderQualityLegend(`legend-quality-${param.code}`, sortedYears, useBands);
+  }
+}
+
+function renderQualityLegend(containerId, sortedYears, showBands) {
+  const legend = document.getElementById(containerId);
+  if (!legend) return;
+  legend.textContent = '';
+  if (showBands) appendBandLegendItems(legend);
+  sortedYears.forEach((year, i) => {
+    const color = YEAR_COLORS[i % YEAR_COLORS.length];
+    const line = createEl('span', { style: { width: '18px', height: '2px', background: color, borderRadius: '1px', display: 'inline-block' } });
+    const item = createEl('span', {
+      style: { display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color },
+    }, [line, document.createTextNode(String(year))]);
+    legend.appendChild(item);
+  });
+}
+
+function setQualityViewMode(mode) {
+  if (mode !== 'lines' && mode !== 'bands') return;
+  const prev = qualityViewMode;
+  qualityViewMode = mode;
+  document.querySelectorAll('#quality-view-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  if (mode === 'bands' && prev !== 'bands' && currentQualityStation) {
+    const cache = qualityData[currentQualityStation.code];
+    if (cache) {
+      const allYears = getQualityAvailableYears(cache);
+      if (allYears.length > 0) {
+        selectedQualityYears = new Set(allYears.slice(-1));
+        renderQualityYearPills(allYears);
+      }
+    }
+  }
+  updateQualityCharts();
+}
+
+async function switchQualityStation(code) {
+  currentQualityStation = qualityStations.find(s => s.code === code);
+  if (!qualityData[code]) qualityData[code] = await loadQualityData(code);
+  const cache = qualityData[code];
+  if (!cache) return;
+
+  const allYears = getQualityAvailableYears(cache);
+  selectedQualityYears = new Set(allYears.slice(-5));
+  renderQualityYearPills(allYears);
+  updateQualityCharts();
+}
+
+function renderQualityYearPills(allYears) {
+  const wrap = document.getElementById('quality-years-wrap');
+  if (!wrap) return;
+  wrap.textContent = '';
+  allYears.forEach((year, i) => {
+    const dot = createEl('span', { className: 'pill-dot' });
+    const pill = createEl('button', {
+      className: 'year-pill' + (selectedQualityYears.has(year) ? ' active' : ''),
+    }, [dot, document.createTextNode(String(year))]);
+    pill.style.setProperty('--color', YEAR_COLORS[i % YEAR_COLORS.length]);
+    pill.addEventListener('click', () => {
+      if (selectedQualityYears.has(year)) selectedQualityYears.delete(year);
+      else selectedQualityYears.add(year);
+      renderQualityYearPills(allYears);
+      updateQualityCharts();
+    });
+    wrap.appendChild(pill);
+  });
+}
+
+function selectLastNQualityYears(n) {
+  if (!currentQualityStation || !qualityData[currentQualityStation.code]) return;
+  const allYears = getQualityAvailableYears(qualityData[currentQualityStation.code]);
+  selectedQualityYears = new Set(allYears.slice(-n));
+  renderQualityYearPills(allYears);
+  updateQualityCharts();
+}
+
+function selectAllQualityYears() {
+  if (!currentQualityStation || !qualityData[currentQualityStation.code]) return;
+  const allYears = getQualityAvailableYears(qualityData[currentQualityStation.code]);
+  selectedQualityYears = new Set(allYears);
+  renderQualityYearPills(allYears);
+  updateQualityCharts();
+}
+
+function deselectAllQualityYears() {
+  if (!currentQualityStation || !qualityData[currentQualityStation.code]) return;
+  const allYears = getQualityAvailableYears(qualityData[currentQualityStation.code]);
+  selectedQualityYears = new Set();
+  renderQualityYearPills(allYears);
+  updateQualityCharts();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    const isActive = (i === 0 && name === 'hydro') || (i === 1 && name === 'quality');
+    btn.classList.toggle('active', isActive);
+  });
+  document.getElementById('tab-hydro').classList.toggle('active', name === 'hydro');
+  document.getElementById('tab-quality').classList.toggle('active', name === 'quality');
+
+  if (name === 'quality' && qualityStations.length > 0 && !currentQualityStation) {
+    switchQualityStation(qualityStations[0].code);
+  } else if (name === 'quality') {
+    updateQualityCharts();
+  }
+}
+
+// ─── Year pills (hydro) ───
+
+function renderYearPills(allYears) {
+  const wrap = document.getElementById('years-wrap');
+  if (!wrap) return;
+  wrap.textContent = '';
+  allYears.forEach((year, i) => {
+    const dot = createEl('span', { className: 'pill-dot' });
+    const pill = createEl('button', {
+      className: 'year-pill' + (selectedYears.has(year) ? ' active' : ''),
+    }, [dot, document.createTextNode(String(year))]);
+    pill.style.setProperty('--color', YEAR_COLORS[i % YEAR_COLORS.length]);
+    pill.addEventListener('click', () => {
+      if (selectedYears.has(year)) selectedYears.delete(year);
+      else selectedYears.add(year);
+      renderYearPills(allYears);
+      updateCharts();
+    });
+    wrap.appendChild(pill);
+  });
+}
+
+function appendBandLegendItems(el) {
+  const baseStyle = { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' };
+  el.appendChild(createEl('span', { style: baseStyle }, [
+    createEl('span', { className: 'legend-band-swatch', style: { background: 'rgba(56,189,248,0.18)' } }),
+    document.createTextNode('P10–P90 (extrêmes)'),
+  ]));
+  el.appendChild(createEl('span', { style: baseStyle }, [
+    createEl('span', { className: 'legend-band-swatch', style: { background: 'rgba(45,212,191,0.4)' } }),
+    document.createTextNode('P25–P75 (normale)'),
+  ]));
+  el.appendChild(createEl('span', { style: baseStyle }, [
+    createEl('span', { className: 'legend-band-line' }),
+    document.createTextNode('Médiane historique'),
+  ]));
+}
+
+function renderLegend(containerId, sortedYears, showBands) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.textContent = '';
+  if (showBands) appendBandLegendItems(el);
+  sortedYears.forEach((y, i) => {
+    const color = YEAR_COLORS[i % YEAR_COLORS.length];
+    const line = createEl('span', { style: { width: '18px', height: '2px', background: color, borderRadius: '1px', display: 'inline-block' } });
+    const item = createEl('span', {
+      style: { display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color },
+    }, [line, document.createTextNode(String(y))]);
+    el.appendChild(item);
+  });
+}
+
+function updateCharts() {
+  const weekLabels = buildWeekLabels();
+  const sortedYears = [...selectedYears].sort();
+  const useBands = hydroViewMode === 'bands';
+
+  if (heightChart) heightChart.destroy();
+  if (heightData && heightData.records.length > 0) {
+    const weeklyH = aggregateWeekly(heightData.records, selectedYears);
+    let dsH;
+    if (useBands) {
+      const pct = aggregateWeeklyPercentiles(heightData.records);
+      dsH = [...buildBandDatasets(pct), ...buildHighlightDatasets(weeklyH, sortedYears)];
+    } else {
+      dsH = buildDatasets(weeklyH, sortedYears);
+    }
+    heightChart = new Chart(document.getElementById('chart-height'), makeChartConfig('mm', dsH, weekLabels));
+    renderLegend('legend-height', sortedYears, useBands);
+  }
+
+  if (flowChart) flowChart.destroy();
+  const noFlowMsg = document.getElementById('no-flow-msg');
+  const flowCanvas = document.getElementById('chart-flow');
+  if (flowData && flowData.records.length > 0) {
+    if (noFlowMsg) noFlowMsg.style.display = 'none';
+    if (flowCanvas) flowCanvas.style.display = '';
+    const weeklyQ = aggregateWeekly(flowData.records, selectedYears);
+    let dsQ;
+    if (useBands) {
+      const pct = aggregateWeeklyPercentiles(flowData.records);
+      dsQ = [...buildBandDatasets(pct), ...buildHighlightDatasets(weeklyQ, sortedYears)];
+    } else {
+      dsQ = buildDatasets(weeklyQ, sortedYears);
+    }
+    flowChart = new Chart(flowCanvas, makeChartConfig('L/s', dsQ, weekLabels));
+    renderLegend('legend-flow', sortedYears, useBands);
+  } else {
+    if (noFlowMsg) noFlowMsg.style.display = 'flex';
+    if (flowCanvas) flowCanvas.style.display = 'none';
+    const fl = document.getElementById('legend-flow');
+    if (fl) fl.textContent = '';
+  }
+  updateStatus();
+  updateAnalysis();
+}
+
+function setHydroViewMode(mode) {
+  if (mode !== 'lines' && mode !== 'bands') return;
+  const prev = hydroViewMode;
+  hydroViewMode = mode;
+  document.querySelectorAll('#hydro-view-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  // Passage en mode bandes : bandes = vue d'ensemble, on ne garde que 1 année
+  // par défaut pour rester lisible. L'utilisateur peut toujours réajouter des années.
+  if (mode === 'bands' && prev !== 'bands' && currentStation) {
+    const records = (heightData && heightData.records) || [];
+    const allYears = getAvailableYears(records);
+    if (allYears.length > 0) {
+      selectedYears = new Set(allYears.slice(-1));
+      renderYearPills(allYears);
+    }
+  }
+  updateCharts();
+}
+
+function computeYearlyAvg(records, yearStart, yearEnd) {
+  const vals = [];
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    if (y >= yearStart && y <= yearEnd) vals.push(r.value);
+  }
+  return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+}
+
+function computeSeasonAvg(records, yearStart, yearEnd, monthStart, monthEnd) {
+  const vals = [];
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    const m = parseInt(r.date.substring(5, 7));
+    if (y >= yearStart && y <= yearEnd && m >= monthStart && m <= monthEnd) vals.push(r.value);
+  }
+  return vals.length > 0 ? { avg: vals.reduce((a, b) => a + b, 0) / vals.length, count: vals.length } : null;
+}
+
+function computeDecadalAvgs(records) {
+  const decades = {};
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    const dec = Math.floor(y / 10) * 10;
+    if (!decades[dec]) decades[dec] = [];
+    decades[dec].push(r.value);
+  }
+  const result = {};
+  for (const [dec, vals] of Object.entries(decades)) {
+    if (vals.length > 100) result[dec] = vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+  return result;
+}
+
+function computeLowFlowDays(records, yearStart, yearEnd, threshold) {
+  let count = 0, total = 0;
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    if (y >= yearStart && y <= yearEnd) {
+      total++;
+      if (r.value < threshold) count++;
+    }
+  }
+  return total > 0 ? { count, total, pct: (count / total * 100) } : null;
+}
+
+function linearTrend(records) {
+  const yearAvgs = {};
+  for (const r of records) {
+    if (!r.date || r.value === null || r.value === undefined) continue;
+    const y = parseInt(r.date.substring(0, 4));
+    if (!yearAvgs[y]) yearAvgs[y] = [];
+    yearAvgs[y].push(r.value);
+  }
+  const points = [];
+  for (const [y, vals] of Object.entries(yearAvgs)) {
+    if (vals.length > 30) points.push({ x: parseInt(y), y: vals.reduce((a, b) => a + b, 0) / vals.length });
+  }
+  if (points.length < 5) return null;
+  const n = points.length;
+  const sx = points.reduce((a, p) => a + p.x, 0);
+  const sy = points.reduce((a, p) => a + p.y, 0);
+  const sxy = points.reduce((a, p) => a + p.x * p.y, 0);
+  const sxx = points.reduce((a, p) => a + p.x * p.x, 0);
+  const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+  const intercept = (sy - slope * sx) / n;
+  const firstYear = Math.min(...points.map(p => p.x));
+  const lastYear = Math.max(...points.map(p => p.x));
+  const firstVal = slope * firstYear + intercept;
+  const lastVal = slope * lastYear + intercept;
+  const totalChange = lastVal - firstVal;
+  const pctChange = (totalChange / firstVal) * 100;
+  return { slope, firstYear, lastYear, firstVal, lastVal, totalChange, pctChange, points };
+}
+
+function fmtNum(v, decimals) {
+  if (v === null || v === undefined) return '—';
+  return v.toLocaleString('fr-FR', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+}
+
+function fmtPct(v) {
+  const sign = v > 0 ? '+' : '';
+  return sign + v.toFixed(1).replace('.', ',') + ' %';
+}
+
+function updateAnalysis() {
+  const container = document.getElementById('analysis-content');
+  if (!container) return;
+  container.textContent = '';
+
+  const allRecords = heightData ? heightData.records : [];
+  const flowRecords = flowData ? flowData.records : [];
+  if (allRecords.length < 365) {
+    container.appendChild(createEl('div', { className: 'analysis-empty', textContent: 'Pas assez de donnees pour generer une analyse. Selectionnez une station avec un historique long.' }));
+    return;
+  }
+
+  const grid = createEl('div', { className: 'insights-grid' });
+  const insights = [];
+
+  // 1. Long-term height trend
+  const hTrend = linearTrend(allRecords);
+  if (hTrend && hTrend.points.length >= 10) {
+    const direction = hTrend.totalChange < 0 ? 'down' : 'up';
+    const iconType = hTrend.totalChange < 0 ? 'down' : 'up';
+    const arrow = hTrend.totalChange < 0 ? '\u2198' : '\u2197';
+    insights.push({
+      icon: arrow, iconClass: iconType,
+      label: 'Niveau moyen de la riviere',
+      value: fmtPct(hTrend.pctChange),
+      valueClass: hTrend.totalChange < 0 ? 'negative' : 'positive',
+      detail: 'Le niveau moyen etait de ' + fmtNum(hTrend.firstVal) + ' mm en ' + hTrend.firstYear + ', il est de ' + fmtNum(hTrend.lastVal) + ' mm en ' + hTrend.lastYear + '. Calcul sur ' + hTrend.points.length + ' annees. ' + narrativeNote('heightTrendNote'),
+    });
+  }
+
+  // 2. Long-term flow trend
+  if (flowRecords.length > 365) {
+    const qTrend = linearTrend(flowRecords);
+    if (qTrend && qTrend.points.length >= 10) {
+      const arrow = qTrend.totalChange < 0 ? '\u2198' : '\u2197';
+      insights.push({
+        icon: arrow, iconClass: qTrend.totalChange < 0 ? 'down' : 'up',
+        label: 'Debit moyen (quantite d\'eau)',
+        value: fmtPct(qTrend.pctChange),
+        valueClass: qTrend.totalChange < 0 ? 'negative' : 'positive',
+        detail: 'Le debit moyen (la quantite d\'eau qui passe par seconde) etait de ' + fmtNum(qTrend.firstVal) + ' L/s en ' + qTrend.firstYear + ', il est de ' + fmtNum(qTrend.lastVal) + ' L/s en ' + qTrend.lastYear + '. ' + narrativeNote('flowTrendNote'),
+      });
+    }
+  }
+
+  // 3. Decade comparison for height
+  const hDecades = computeDecadalAvgs(allRecords);
+  const decKeys = Object.keys(hDecades).map(Number).sort();
+  if (decKeys.length >= 2) {
+    const oldest = decKeys[0];
+    const newest = decKeys[decKeys.length - 1];
+    const diff = hDecades[newest] - hDecades[oldest];
+    const pct = (diff / hDecades[oldest]) * 100;
+    insights.push({
+      icon: diff < 0 ? '\u2193' : '\u2191', iconClass: diff < 0 ? 'down' : 'up',
+      label: 'D\'une decennie a l\'autre',
+      value: fmtPct(pct),
+      valueClass: diff < 0 ? 'negative' : 'positive',
+      detail: 'Dans les annees ' + oldest + ', le niveau moyen etait de ' + fmtNum(hDecades[oldest]) + ' mm. Dans les annees ' + newest + ', il est de ' + fmtNum(hDecades[newest]) + ' mm. ' + (diff < 0 ? 'La riviere est plus basse qu\'avant.' : 'La riviere est plus haute qu\'avant.'),
+    });
+  }
+
+  // 4. Summer stress (July-September) comparison
+  const allYears = getAvailableYears(allRecords);
+  const currentYear = new Date().getFullYear();
+  if (allYears.length >= 10) {
+    const earlyYears = allYears.filter(y => y < 2000);
+    const recentYears = allYears.filter(y => y >= 2015);
+    if (earlyYears.length > 3 && recentYears.length > 3) {
+      const earlyStart = Math.min(...earlyYears), earlyEnd = Math.max(...earlyYears);
+      const recentStart = Math.min(...recentYears), recentEnd = Math.max(...recentYears);
+      const earlySummer = computeSeasonAvg(allRecords, earlyStart, earlyEnd, 7, 9);
+      const recentSummer = computeSeasonAvg(allRecords, recentStart, recentEnd, 7, 9);
+      if (earlySummer && recentSummer) {
+        const diff = recentSummer.avg - earlySummer.avg;
+        const pct = (diff / earlySummer.avg) * 100;
+        insights.push({
+          icon: '\u2600', iconClass: diff < 0 ? 'warn' : 'info',
+          label: 'Secheresse d\'ete (juil-sept)',
+          value: fmtPct(pct),
+          valueClass: diff < 0 ? 'negative' : 'neutral',
+          detail: 'En ete, le niveau moyen etait de ' + fmtNum(earlySummer.avg) + ' mm avant 2000, il est de ' + fmtNum(recentSummer.avg) + ' mm depuis 2015. ' + (diff < 0 ? 'Le niveau de ' + riverLabel() + ' est plus bas en ete qu\'avant. ' : 'Pas de baisse marquee en ete. ') + narrativeNote('summerNote'),
+        });
+      }
+    }
+  }
+
+  // 5. Winter comparison (Dec-Feb)
+  if (allYears.length >= 10) {
+    const earlyYears = allYears.filter(y => y < 2000);
+    const recentYears = allYears.filter(y => y >= 2015);
+    if (earlyYears.length > 3 && recentYears.length > 3) {
+      const earlyWinter = computeSeasonAvg(allRecords, Math.min(...earlyYears), Math.max(...earlyYears), 12, 12);
+      const earlyWinter2 = computeSeasonAvg(allRecords, Math.min(...earlyYears), Math.max(...earlyYears), 1, 2);
+      const recentWinter = computeSeasonAvg(allRecords, Math.min(...recentYears), Math.max(...recentYears), 12, 12);
+      const recentWinter2 = computeSeasonAvg(allRecords, Math.min(...recentYears), Math.max(...recentYears), 1, 2);
+      if (earlyWinter && earlyWinter2 && recentWinter && recentWinter2) {
+        const earlyAvg = (earlyWinter.avg * earlyWinter.count + earlyWinter2.avg * earlyWinter2.count) / (earlyWinter.count + earlyWinter2.count);
+        const recentAvg = (recentWinter.avg * recentWinter.count + recentWinter2.avg * recentWinter2.count) / (recentWinter.count + recentWinter2.count);
+        const diff = recentAvg - earlyAvg;
+        const pct = (diff / earlyAvg) * 100;
+        insights.push({
+          icon: '\u2744', iconClass: diff > 0 ? 'info' : 'warn',
+          label: 'Crues d\'hiver (dec-fev)',
+          value: fmtPct(pct),
+          valueClass: diff > 0 ? 'positive' : 'neutral',
+          detail: 'En hiver, le niveau moyen etait de ' + fmtNum(earlyAvg) + ' mm avant 2000, il est de ' + fmtNum(recentAvg) + ' mm depuis 2015. ' + (diff > 0 ? 'Les crues hivernales sont plus fortes. C\'est un effet du changement climatique : il pleut plus fort en hiver, mais l\'eau ruisselle au lieu de s\'infiltrer dans le sol.' : 'Les crues hivernales n\'ont pas augmente de facon notable.'),
+        });
+      }
+    }
+  }
+
+  // 6. Most recent year vs long-term average
+  const lastFullYear = allYears.filter(y => y < currentYear).pop();
+  if (lastFullYear) {
+    const longTermAvg = computeYearlyAvg(allRecords, allYears[0], allYears[allYears.length - 1]);
+    const lastYearAvg = computeYearlyAvg(allRecords, lastFullYear, lastFullYear);
+    if (longTermAvg && lastYearAvg) {
+      const diff = lastYearAvg - longTermAvg;
+      const pct = (diff / longTermAvg) * 100;
+      insights.push({
+        icon: '\u25C9', iconClass: diff < 0 ? 'down' : 'up',
+        label: lastFullYear + ' par rapport a la moyenne',
+        value: fmtPct(pct),
+        valueClass: diff < 0 ? 'negative' : 'positive',
+        detail: 'En ' + lastFullYear + ', le niveau moyen etait de ' + fmtNum(lastYearAvg) + ' mm. La moyenne sur toute la periode (' + allYears[0] + '-' + allYears[allYears.length - 1] + ') est de ' + fmtNum(longTermAvg) + ' mm. ' + (diff < 0 ? 'L\'annee ' + lastFullYear + ' etait en dessous de la normale.' : 'L\'annee ' + lastFullYear + ' etait au dessus de la normale.'),
+      });
+    }
+  }
+
+  // 7. Projections (from per-river narrative config)
+  const proj = currentRiver.narrative && currentRiver.narrative.projectionInsight;
+  if (proj && proj.detail) {
+    insights.push({
+      icon: '\u26A0', iconClass: 'warn',
+      label: 'Projections 2050 (Explore2 / GIEC)',
+      value: proj.value || '',
+      valueClass: 'negative',
+      detail: proj.detail,
+    });
+  }
+
+  // Render insight cards
+  for (const ins of insights) {
+    const iconEl = createEl('div', { className: 'ic-icon ' + ins.iconClass, textContent: ins.icon });
+    const labelEl = createEl('div', { className: 'ic-label', textContent: ins.label });
+    const header = createEl('div', { className: 'ic-header' }, [iconEl, labelEl]);
+    const valueEl = createEl('div', { className: 'ic-value ' + ins.valueClass, textContent: ins.value });
+    const detailEl = createEl('div', { className: 'ic-detail', textContent: ins.detail });
+    grid.appendChild(createEl('div', { className: 'insight-card' }, [header, valueEl, detailEl]));
+  }
+  container.appendChild(grid);
+
+  // Summary paragraph
+  if (hTrend && insights.length >= 3) {
+    const result = buildSummary(hTrend, flowRecords.length > 365 ? linearTrend(flowRecords) : null, allYears, currentStation);
+    if (result) {
+      const summary = createEl('div', { className: 'analysis-summary' });
+      result.paragraphs.forEach(p => summary.appendChild(createEl('p', { textContent: p, style: { marginBottom: '0.5rem' } })));
+      // Sources with links
+      const srcDiv = createEl('div', { className: 'analysis-sources' });
+      srcDiv.appendChild(document.createTextNode('Sources : '));
+      result.sources.forEach((src, i) => {
+        const link = createEl('a', { href: src.url, target: '_blank', rel: 'noopener', textContent: src.label });
+        srcDiv.appendChild(link);
+        if (i < result.sources.length - 1) srcDiv.appendChild(document.createTextNode(' \u00B7 '));
+      });
+      summary.appendChild(srcDiv);
+      container.appendChild(summary);
+    }
+  }
+}
+
+function buildSummary(hTrend, qTrend, allYears, station) {
+  const paragraphs = [];
+  const span = hTrend.lastYear - hTrend.firstYear;
+
+  // Main observation
+  let main = 'En ' + span + ' ans de mesures a ' + station.name + ', ';
+  if (hTrend.pctChange < -3) {
+    main += 'le niveau de ' + riverLabel() + ' a baisse de ' + Math.abs(hTrend.pctChange).toFixed(1).replace('.', ',') + '%.';
+  } else if (hTrend.pctChange > 3) {
+    main += 'le niveau de ' + riverLabel() + ' a monte de ' + hTrend.pctChange.toFixed(1).replace('.', ',') + '%.';
+  } else {
+    main += 'le niveau de ' + riverLabel() + ' est reste a peu pres stable (variation de ' + Math.abs(hTrend.pctChange).toFixed(1).replace('.', ',') + '%).';
+  }
+  if (qTrend && qTrend.pctChange < -5) {
+    main += ' Mais le debit (la quantite d\'eau) a diminue de ' + Math.abs(qTrend.pctChange).toFixed(1).replace('.', ',') + '% : il y a moins d\'eau qui coule dans la riviere.';
+  }
+  paragraphs.push(main);
+
+  // Context + projections, propres a la riviere (depuis config/rivers.json)
+  if (narrativeNote('contextParagraph')) paragraphs.push(narrativeNote('contextParagraph'));
+  if (narrativeNote('projectionsParagraph')) paragraphs.push(narrativeNote('projectionsParagraph'));
+
+  const sources = (currentRiver.narrative && currentRiver.narrative.sources) || [];
+  return { paragraphs, sources };
+}
+
+function updateStatus() {
+  const bar = document.getElementById('status-bar');
+  if (!bar) return;
+  bar.textContent = '';
+
+  function addStatusItem(dotClass, text) {
+    const dot = createEl('span', { className: 'status-dot' + (dotClass ? ' ' + dotClass : '') });
+    bar.appendChild(createEl('div', { className: 'status-item' }, [dot, document.createTextNode(text)]));
+  }
+
+  if (heightData) {
+    addStatusItem('', 'Hauteur: ' + heightData.record_count.toLocaleString('fr-FR') + ' mesures (' + heightData.date_min + ' \u2192 ' + heightData.date_max + ')');
+  }
+  if (flowData && flowData.records.length > 0) {
+    addStatusItem('', 'Debit: ' + flowData.record_count.toLocaleString('fr-FR') + ' mesures (' + flowData.date_min + ' \u2192 ' + flowData.date_max + ')');
+  } else if (currentStation && !currentStation.has_Q) {
+    addStatusItem('off', 'Debit: non disponible');
+  }
+  if (heightData && heightData.fetched_at) {
+    addStatusItem('warn', 'Cache: ' + new Date(heightData.fetched_at).toLocaleDateString('fr-FR'));
+  }
+  addStatusItem('off', 'Annees selectionnees: ' + selectedYears.size);
+}
+
+function updateHeaderStation() {
+  const el = document.getElementById('station-display');
+  if (currentStation) {
+    const map = currentRiver.region_label_by_dept || {};
+    const region = map[currentStation.dept] || '';
+    el.textContent = region ? currentStation.name + ' \u2014 ' + region : currentStation.name;
+  }
+}
+
+function renderRiverSelect() {
+  const sel = document.getElementById('river-select');
+  if (!sel) return;
+  sel.textContent = '';
+  rivers.forEach(r => sel.appendChild(createEl('option', { value: r.id, textContent: r.name })));
+  if (currentRiver) sel.value = currentRiver.id;
+  sel.onchange = () => switchRiver(sel.value);
+}
+
+async function switchRiver(id) {
+  currentRiver = rivers.find(r => r.id === id) || rivers[0];
+
+  // Reset all per-river state
+  stations = [];
+  currentStation = null;
+  heightData = null;
+  flowData = null;
+  selectedYears = new Set();
+  qualityStations = [];
+  qualityData = {};
+  currentQualityStation = null;
+  selectedQualityYears = new Set();
+
+  const titleEl = document.getElementById('river-title');
+  if (titleEl) titleEl.textContent = currentRiver.name;
+
+  [stations, qualityStations] = await Promise.all([
+    loadStations(),
+    loadQualityStations().catch(() => []),
+  ]);
+  renderDashboard();
+  const defaultStation = stations.find(s => s.has_Q) || stations[0];
+  await switchStation(defaultStation.code);
+
+  // Pre-load quality station data in the background (non-blocking)
+  qualityStations.forEach(s => {
+    loadQualityData(s.code).then(d => { qualityData[s.code] = d; });
+  });
+}
+
+async function switchStation(code) {
+  currentStation = stations.find(s => s.code === code);
+  updateHeaderStation();
+  heightData = await loadCacheFile(code, 'HIXnJ');
+  flowData = currentStation.has_Q ? await loadCacheFile(code, 'QmnJ') : null;
+
+  const allRecords = [
+    ...(heightData ? heightData.records : []),
+    ...(flowData ? flowData.records : []),
+  ];
+  const allYears = getAvailableYears(allRecords);
+  if (selectedYears.size === 0) selectedYears = new Set(allYears.slice(-5));
+  renderYearPills(allYears);
+  updateCharts();
+}
+
+function getAllYearsFromData() {
+  const allRecords = [
+    ...(heightData ? heightData.records : []),
+    ...(flowData ? flowData.records : []),
+  ];
+  return getAvailableYears(allRecords);
+}
+
+function selectLastNYears(n) {
+  const allYears = getAllYearsFromData();
+  selectedYears = new Set(allYears.slice(-n));
+  renderYearPills(allYears);
+  updateCharts();
+}
+
+function selectAllYears() {
+  const allYears = getAllYearsFromData();
+  selectedYears = new Set(allYears);
+  renderYearPills(allYears);
+  updateCharts();
+}
+
+function deselectAllYears() {
+  const allYears = getAllYearsFromData();
+  selectedYears = new Set();
+  renderYearPills(allYears);
+  updateCharts();
+}
+
+// ─── API Refresh ───
+
+async function fetchAllPages(stationCode, grandeur, onProgress) {
+  let url = 'https://hubeau.eaufrance.fr/api/v2/hydrometrie/obs_elab?code_entite=' + stationCode + '&grandeur_hydro_elab=' + grandeur + '&size=2000&sort=asc';
+  const allData = [];
+  let page = 0;
+  let totalEstimate = null;
+  while (url) {
+    page++;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('API error: ' + resp.status);
+    const json = await resp.json();
+    if (totalEstimate === null) totalEstimate = json.count || 0;
+    allData.push(...json.data);
+    onProgress(allData.length, totalEstimate, page);
+    url = json.next || null;
+    if (url) await new Promise(r => setTimeout(r, 120));
+  }
+  return allData;
+}
+
+function buildCacheObject(station, grandeur, unit, rawData) {
+  const records = rawData.map(r => ({
+    date: r.date_obs_elab,
+    value: r.resultat_obs_elab,
+    quality: r.libelle_qualification,
+  }));
+  return {
+    station_code: station.code,
+    station_name: station.name,
+    grandeur, unit,
+    fetched_at: new Date().toISOString(),
+    record_count: records.length,
+    date_min: records.length ? records[0].date : null,
+    date_max: records.length ? records[records.length - 1].date : null,
+    records,
+  };
+}
+
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function refreshFromAPI() {
+  if (!currentStation) return;
+  const overlay = document.getElementById('progress-overlay');
+  const fill = document.getElementById('progress-fill');
+  const text = document.getElementById('progress-text');
+  const title = document.getElementById('progress-title');
+  const btn = document.getElementById('btn-refresh');
+
+  overlay.classList.add('visible');
+  btn.classList.add('loading');
+  fill.style.width = '0%';
+
+  const tasks = [{ grandeur: 'HIXnJ', unit: 'mm', label: 'Hauteur' }];
+  if (currentStation.has_Q) tasks.push({ grandeur: 'QmnJ', unit: 'L/s', label: 'Debit' });
+  const downloads = [];
+
+  for (let t = 0; t < tasks.length; t++) {
+    const task = tasks[t];
+    title.textContent = 'Recuperation: ' + task.label;
+    try {
+      const rawData = await fetchAllPages(currentStation.code, task.grandeur, (fetched, total, page) => {
+        const pct = total > 0 ? Math.min(100, Math.round(fetched / total * 100)) : 0;
+        fill.style.width = ((t * 50) + (pct * 0.5)) + '%';
+        text.textContent = fetched.toLocaleString('fr-FR') + ' / ' + total.toLocaleString('fr-FR') + ' mesures (page ' + page + ')';
+      });
+      const cacheObj = buildCacheObject(currentStation, task.grandeur, task.unit, rawData);
+      downloads.push({ data: cacheObj, filename: currentStation.code + '_' + task.grandeur + '.json' });
+      if (task.grandeur === 'HIXnJ') heightData = cacheObj;
+      else flowData = cacheObj;
+    } catch (err) {
+      text.textContent = 'Erreur: ' + err.message;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+
+  fill.style.width = '100%';
+  title.textContent = 'Telechargement des fichiers';
+  text.textContent = 'Enregistrez les fichiers dans data_cache/' + currentRiver.id + '/';
+  for (const dl of downloads) {
+    downloadJSON(dl.data, dl.filename);
+    await new Promise(r => setTimeout(r, 500));
+  }
+  text.textContent = 'Termine ! Mise a jour des graphiques...';
+  await new Promise(r => setTimeout(r, 800));
+  overlay.classList.remove('visible');
+  btn.classList.remove('loading');
+
+  const allYears = getAllYearsFromData();
+  selectedYears = new Set(allYears.slice(-5));
+  renderYearPills(allYears);
+  updateCharts();
+}
+
+// ─── Chart.js defaults ───
+Chart.defaults.color = '#4a5d7a';
+Chart.defaults.font.family = "'IBM Plex Sans',sans-serif";
+
+// ─── Init ───
+async function init() {
+  try {
+    rivers = await loadRivers();
+    if (!rivers.length) throw new Error('Aucun cours d\'eau dans config/rivers.json');
+    currentRiver = rivers[0];
+    renderRiverSelect();
+    await switchRiver(currentRiver.id);
+  } catch (err) {
+    console.error('[init] Error:', err);
+    const main = document.getElementById('main-content');
+    main.textContent = '';
+    const msg = createEl('div', { className: 'state-message' }, [
+      createEl('h2', { textContent: 'Donnees introuvables' }),
+      createEl('pre', { style: { textAlign: 'left', color: '#f87171', fontSize: '0.75rem', marginTop: '1rem', padding: '0.5rem', background: '#0f1628', borderRadius: '6px', overflowX: 'auto' }, textContent: String(err) }),
+      createEl('p', { textContent: "Le cache local n'a pas ete trouve. Executez d'abord le script de recuperation des donnees pour alimenter le tableau de bord." }),
+      createEl('code', { textContent: 'python3 scripts/fetch_hydro_data.py' }),
+      createEl('p', { style: { marginTop: '1.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }, textContent: 'Puis servez le dossier via HTTP :' }),
+      createEl('code', { style: { marginTop: '0.5rem' }, textContent: 'python3 -m http.server 8000' }),
+    ]);
+    main.appendChild(msg);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
