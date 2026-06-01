@@ -80,11 +80,16 @@ Le site est **100 % statique** (HTML + JS + JSON commités). Un workflow GitHub 
 
 Mise en route une fois le dépôt poussé sur GitHub :
 
-1. **Settings → Pages → Build and deployment → Source : GitHub Actions**.
-2. Pousser sur `main` (ou lancer le workflow manuellement via *Actions → Deploy to GitHub Pages → Run workflow*).
-3. Le site est publié sur `https://<utilisateur>.github.io/<dépôt>/`.
+1. **Activer Pages (obligatoire, une fois)** : *Settings → Pages → Build and deployment → Source : **GitHub Actions***.
+   Sans cette étape, le workflow échoue avec `Get Pages site failed … Not Found` :
+   le token du job n'a pas le droit de créer le site Pages lui-même.
+2. **Permissions des workflows** : *Settings → Actions → General → Workflow permissions → **Read and write permissions***.
+3. Pousser sur `main` (ou lancer le workflow manuellement via *Actions → Deploy to GitHub Pages → Run workflow*).
+4. Le site est publié sur `https://<utilisateur>.github.io/<dépôt>/`.
 
 Le fichier `.nojekyll` à la racine évite que Pages ne traite le dépôt avec Jekyll.
+Le workflow force l'exécution des actions sur Node.js 24 (`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`)
+pour éviter l'avertissement de dépréciation de Node.js 20.
 
 ## Sources de données
 
