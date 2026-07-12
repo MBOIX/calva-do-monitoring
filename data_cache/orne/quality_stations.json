@@ -5,22 +5,22 @@
       "name": "L'ORNE A LOUVIGNY 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 3906
+      "total_records": 3931
     },
     {
       "code": "03234650",
       "name": "L'ORNE A SERANS 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 2348
+      "total_records": 2359
     },
     {
       "code": "03236395",
       "name": "L'ORNE A CAUMONT-SUR-ORNE 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 1959
+      "total_records": 1969
     }
   ],
-  "updated_at": "2026-05-01T15:35:49.304754"
+  "updated_at": "2026-06-20T19:05:04.097565"
 }
