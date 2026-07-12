@@ -57,6 +57,42 @@ python3 -m http.server 8000   # puis http://localhost:8000/
 3. `python3 scripts/fetch_hydro_data.py --river <id>` puis `fetch_quality_data.py --river <id>`.
 4. Committer `config/rivers.json` + `data_cache/<id>/`.
 
+## Intégrité des données (invariants à préserver)
+
+`config/rivers.json` ↔ `data_cache/<id>/` ↔ dashboard forment un **contrat implicite** : le
+dashboard ne valide rien à l'exécution. Un fichier manquant ou mal formé = graphe **vide et
+silencieux** (les `fetch()` renvoient `null`, aucune erreur visible). À garder vrai à chaque modif :
+
+- **`id` = nom du dossier** `data_cache/<id>/` (tous les chemins passent par `riverDataPath`).
+- **Chaque station hydro a un `<code>_HIXnJ.json`** ; `has_Q: true` ⇒ aussi `<code>_QmnJ.json`,
+  `has_Q: false` ⇒ **pas** de QmnJ (le dashboard saute la grandeur). Invariant tenu aujourd'hui.
+- **`region_label_by_dept` couvre chaque `dept`** listé dans `stations` (sinon bandeau région vide).
+- **Qualité** : `quality_stations.json` + un `<code>_quality.json` par station top-3, contenant
+  les 5 paramètres SANDRE `1311 / 1302 / 1340 / 1339 / 1335`.
+- **Clés `narrative` lues par le dashboard** : `heightTrendNote`, `flowTrendNote`, `summerNote`,
+  `projectionInsight.{value,detail}`, `contextParagraph`, `projectionsParagraph`, `sources[].{label,url}`.
+  Une clé absente dégrade en silence (texte vide), pas d'erreur → à relire à l'œil.
+- **Format JSON** : UTF-8, compact (`separators=(",",":")`), `date` en `YYYY-MM-DD` — triable
+  lexicographiquement, dont dépendent l'incrémental des scripts et les agrégations du dashboard.
+
+## Valider avant de committer
+
+Sans aucune dépendance (stdlib + outils déjà présents) :
+
+```bash
+# 1. Syntaxe JSON de toute la config + tous les caches
+find config data_cache -name '*.json' -print0 | xargs -0 -I{} python3 -m json.tool {} > /dev/null
+
+# 2. Aucun chemin data_cache/… en dur réintroduit dans index.html (doit matcher uniquement riverDataPath)
+grep -n "data_cache/" index.html
+
+# 3. Servir en local et vérifier la console SANS erreur (un cache manquant = graphe vide silencieux)
+python3 -m http.server 8000
+```
+
+Cohérence `rivers.json` ↔ `data_cache/` (id = dossier, HIXnJ par station, `has_Q` ⇒ QmnJ, 5 codes
+qualité) : pas de script dédié pour l'instant — vérifier à la main, ou l'automatiser (cf. CI ci-dessous).
+
 ## Conventions / contraintes
 
 - **Pas de build, pas de framework, pas de dépendance** : HTML/JS vanilla, Python stdlib.
@@ -70,13 +106,16 @@ python3 -m http.server 8000   # puis http://localhost:8000/
 - Toutes les lectures de données passent par `riverDataPath(file)` ; ne pas réintroduire
   de chemin `data_cache/...` en dur dans les `fetch()`.
 
-## Déploiement (GitHub Pages)
+## Déploiement & CI (GitHub Pages)
 
 - Site 100 % statique, publié par `.github/workflows/deploy.yml` à chaque push sur `main`.
 - **Pré-requis manuel une fois** : *Settings → Pages → Source : GitHub Actions* (sinon
   `Get Pages site failed / Not Found`), et *Workflow permissions : Read and write*.
 - Mise à jour des données = **manuelle** (lancer les scripts en local + committer) ; il n'y
   a **pas** de cron/ETL côté GitHub Actions, uniquement du déploiement.
+- **Gate qualité recommandé (pas encore en place)** : avant le déploiement, faire échouer le
+  build si un JSON ne parse pas ou si `rivers.json` ↔ `data_cache/` est incohérent (étapes de
+  « Valider avant de committer »). 100 % stdlib, **aucune dépendance ajoutée au site livré**.
 
 ## Données & licence
 
