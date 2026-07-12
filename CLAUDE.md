@@ -72,8 +72,11 @@ silencieux** (les `fetch()` renvoient `null`, aucune erreur visible). À garder 
 - **Clés `narrative` lues par le dashboard** : `heightTrendNote`, `flowTrendNote`, `summerNote`,
   `projectionInsight.{value,detail}`, `contextParagraph`, `projectionsParagraph`, `sources[].{label,url}`.
   Une clé absente dégrade en silence (texte vide), pas d'erreur → à relire à l'œil.
-- **Format JSON** : UTF-8, compact (`separators=(",",":")`), `date` en `YYYY-MM-DD` — triable
-  lexicographiquement, dont dépendent l'incrémental des scripts et les agrégations du dashboard.
+- **Format JSON** : UTF-8. Les fichiers de mesures (`<code>_HIXnJ.json`, `<code>_QmnJ.json`,
+  `<code>_quality.json`) sont compacts (`separators=(",",":")`), `date` en `YYYY-MM-DD` —
+  triable lexicographiquement, dont dépendent l'incrémental des scripts et les agrégations
+  du dashboard. Les index (`stations.json`, `quality_stations.json`) sont indentés
+  (`indent=2`), lisibles, sans enjeu de tri.
 
 ## Valider avant de committer
 
@@ -105,6 +108,9 @@ qualité) : pas de script dédié pour l'instant — vérifier à la main, ou l'
 - `data_cache/` est **volontairement versionné** (données statiques du site) — ne pas l'ignorer.
 - Toutes les lectures de données passent par `riverDataPath(file)` ; ne pas réintroduire
   de chemin `data_cache/...` en dur dans les `fetch()`.
+- **Messages de commit** : conventionnels et en français — préfixe de type en minuscules
+  (`docs:`, `chore:`, `data:`, `fix:`…) suivi d'une description concise
+  (ex. `data: rafraîchit les caches hydrométrie et qualité`).
 
 ## Déploiement & CI (GitHub Pages)
 
