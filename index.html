@@ -469,19 +469,20 @@ function narrativeNote(key) {
 }
 
 async function loadRivers() {
-  const resp = await fetch('config/rivers.json');
+  // no-cache : revalider via ETag pour ne jamais servir un data_cache/… périmé depuis le cache navigateur
+  const resp = await fetch('config/rivers.json', { cache: 'no-cache' });
   if (!resp.ok) throw new Error('config/rivers.json introuvable');
   return (await resp.json()).rivers;
 }
 
 async function loadStations() {
-  const resp = await fetch(riverDataPath('stations.json'));
+  const resp = await fetch(riverDataPath('stations.json'), { cache: 'no-cache' });
   if (!resp.ok) throw new Error('stations.json introuvable');
   return (await resp.json()).stations;
 }
 
 async function loadCacheFile(stationCode, grandeur) {
-  const resp = await fetch(riverDataPath(stationCode + '_' + grandeur + '.json'));
+  const resp = await fetch(riverDataPath(stationCode + '_' + grandeur + '.json'), { cache: 'no-cache' });
   if (!resp.ok) return null;
   return await resp.json();
 }
@@ -917,14 +918,14 @@ function buildQualityTab(container) {
 }
 
 async function loadQualityStations() {
-  const resp = await fetch(riverDataPath('quality_stations.json'));
+  const resp = await fetch(riverDataPath('quality_stations.json'), { cache: 'no-cache' });
   if (!resp.ok) return [];
   const json = await resp.json();
   return json.stations || [];
 }
 
 async function loadQualityData(stationCode) {
-  const resp = await fetch(riverDataPath(stationCode + '_quality.json'));
+  const resp = await fetch(riverDataPath(stationCode + '_quality.json'), { cache: 'no-cache' });
   if (!resp.ok) return null;
   return await resp.json();
 }
