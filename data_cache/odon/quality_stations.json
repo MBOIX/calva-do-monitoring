@@ -5,14 +5,14 @@
       "name": "L'ODON A BRETTEVILLE-SUR-ODON 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 1788
+      "total_records": 1793
     },
     {
       "code": "03243350",
       "name": "L'ODON A EPINAY-SUR-ODON 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 1271
+      "total_records": 1276
     },
     {
       "code": "03243120",
@@ -22,5 +22,5 @@
       "total_records": 145
     }
   ],
-  "updated_at": "2026-07-12T19:31:09.716655"
+  "updated_at": "2026-08-18T20:23:53.741579"
 }
