@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calvados — Tableau de bord hydrologique</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="js/situation.js"></script>
+<script src="js/vigieau.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -22,6 +24,10 @@
   --accent-blue:#38bdf8;
   --accent-indigo:#818cf8;
   --danger:#f87171;
+  --level-vigilance:#facc15;
+  --level-alerte:#fb923c;
+  --level-alerte-renforcee:#f87171;
+  --level-crise:#dc2626;
   --surface-glow:rgba(45,212,191,0.04);
   --font-display:'DM Serif Display',Georgia,serif;
   --font-body:'IBM Plex Sans',system-ui,sans-serif;
@@ -189,6 +195,43 @@ body::before{
   align-items:center;justify-content:center;color:var(--text-muted);font-size:0.9rem;
 }
 .no-data-msg svg{width:48px;height:48px;margin-bottom:0.8rem;opacity:0.3}
+.situation-panel{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.4rem 1.6rem;margin-bottom:1.5rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.situation-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(56,189,248,0.25),transparent);
+}
+.situation-title{font-family:var(--font-display);font-size:1.15rem;margin-bottom:0.25rem;color:var(--text-primary)}
+.situation-subtitle{font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem;font-weight:300}
+.situation-line{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:0.3rem 0.9rem;
+  padding:0.6rem 0;border-top:1px solid var(--border);
+}
+.situation-line-label{
+  flex:0 0 6.5rem;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text-muted);font-weight:600;
+}
+.situation-line-body{flex:1 1 280px;min-width:0;font-size:0.9rem;line-height:1.6;color:var(--text-secondary)}
+.situation-line-body strong{color:var(--text-primary);font-weight:600}
+.situation-line-body a{color:var(--accent-blue)}
+.situation-line-body a:hover{color:var(--accent-teal)}
+.situation-note{color:var(--text-muted);font-size:0.8rem}
+.situation-badge{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  padding:0.1rem 0.7rem;margin-right:0.4rem;border-radius:20px;
+  border:1px solid var(--level-color,var(--border-light));
+  font-size:0.78rem;font-weight:600;color:var(--text-primary);
+}
+.situation-badge::before{
+  content:'';width:8px;height:8px;border-radius:50%;background:var(--level-color,var(--text-muted));
+}
+.situation-badge--vigilance{--level-color:var(--level-vigilance)}
+.situation-badge--alerte{--level-color:var(--level-alerte)}
+.situation-badge--alerte-renforcee{--level-color:var(--level-alerte-renforcee)}
+.situation-badge--crise{--level-color:var(--level-crise);background:var(--level-crise);color:#fff}
+.situation-badge--crise::before{background:#fff}
 .analysis-panel{
   background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
   padding:1.6rem;margin-bottom:1.5rem;box-shadow:var(--shadow);position:relative;overflow:hidden;
@@ -286,6 +329,7 @@ body::before{
   .actions .btn{flex:1;justify-content:center}
   .chart-container{height:312px}
   .years-wrap{max-width:100%}
+  .situation-line-label{flex-basis:100%}
 }
 @media(max-width:480px){.chart-container{height:264px}}
 ::-webkit-scrollbar{width:8px}
@@ -591,19 +635,6 @@ function buildHighlightDatasets(weeklyData, sortedYears) {
   }));
 }
 
-function computePercentiles(values, percentiles) {
-  if (!values || values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const out = {};
-  for (const p of percentiles) {
-    const idx = (p / 100) * (sorted.length - 1);
-    const lo = Math.floor(idx);
-    const hi = Math.ceil(idx);
-    out[p] = lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
-  }
-  return out;
-}
-
 function aggregateWeeklyPercentiles(records) {
   const buckets = Array.from({ length: 53 }, () => []);
   for (const r of records) {
@@ -726,6 +757,8 @@ function renderDashboard() {
 }
 
 function buildHydroTab(container) {
+  container.appendChild(buildSituationPanel());
+
   // Controls
   const stationSelect = createEl('select', { id: 'station-select' });
   stations.forEach(s => {
@@ -1675,10 +1708,14 @@ async function switchRiver(id) {
 }
 
 async function switchStation(code) {
-  currentStation = stations.find(s => s.code === code);
+  const station = stations.find(s => s.code === code);
+  currentStation = station;
   updateHeaderStation();
-  heightData = await loadCacheFile(code, 'HIXnJ');
-  flowData = currentStation.has_Q ? await loadCacheFile(code, 'QmnJ') : null;
+  const loadedHeightData = await loadCacheFile(code, 'HIXnJ');
+  const loadedFlowData = station.has_Q ? await loadCacheFile(code, 'QmnJ') : null;
+  if (station !== currentStation) return;   // une autre station ou rivière a été choisie pendant le chargement
+  heightData = loadedHeightData;
+  flowData = loadedFlowData;
 
   const allRecords = [
     ...(heightData ? heightData.records : []),
@@ -1688,6 +1725,7 @@ async function switchStation(code) {
   if (selectedYears.size === 0) selectedYears = new Set(allYears.slice(-5));
   renderYearPills(allYears);
   updateCharts();
+  updateSituation();
 }
 
 function getAllYearsFromData() {
@@ -1817,11 +1855,182 @@ async function refreshFromAPI() {
   selectedYears = new Set(allYears.slice(-5));
   renderYearPills(allYears);
   updateCharts();
+  updateSituation();
 }
 
 // ─── Chart.js defaults ───
 Chart.defaults.color = '#4a5d7a';
 Chart.defaults.font.family = "'IBM Plex Sans',sans-serif";
+
+// ─── Situation actuelle ───
+
+const SITUATION_STALE_AFTER_DAYS = 10;
+const SITUATION_CATEGORY_LABELS = {
+  tres_bas: 'très bas', bas: 'bas', normal: 'normal', haut: 'haut', tres_haut: 'très haut',
+};
+const VIGIEAU_PUBLIC_URL = 'https://vigieau.gouv.fr';
+let situationRequestToken = 0;    // ignore une réponse VigiEau arrivée après un changement de station
+
+function buildSituationPanel() {
+  return createEl('div', { className: 'situation-panel fade-in', id: 'situation-panel', 'data-status': 'loading' }, [
+    createEl('div', { className: 'situation-title', textContent: 'Situation actuelle' }),
+    createEl('div', { className: 'situation-subtitle', id: 'situation-subtitle' }),
+    createEl('div', { id: 'situation-lines' }),
+  ]);
+}
+
+function localTodayIso() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return now.getFullYear() + '-' + month + '-' + day;
+}
+
+// '2026-09-27' (ou '2026-09-27T00:00:00Z') → '27/09/2026' ; sans année : '27/09'. null si illisible.
+function formatIsoDate(iso, withYear) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(typeof iso === 'string' ? iso : '');
+  if (!match) return null;
+  return match[3] + '/' + match[2] + (withYear ? '/' + match[1] : '');
+}
+
+function formatFlowM3s(litersPerSecond) {
+  return (litersPerSecond / 1000).toLocaleString('fr-FR', { maximumSignificantDigits: 3 }) + ' m³/s';
+}
+
+function formatHeightMm(millimeters) {
+  return Math.round(millimeters).toLocaleString('fr-FR') + ' mm';
+}
+
+// Débit (L/s) quand la station en a un, sinon hauteur (mm) ; le repère d'étiage n'existe que pour le débit.
+function situationSeries(station) {
+  if (station.has_Q) {
+    return { records: flowData ? flowData.records : [], label: 'Débit', format: formatFlowM3s, withLowFlow: true };
+  }
+  return { records: heightData ? heightData.records : [], label: 'Hauteur', format: formatHeightMm, withLowFlow: false };
+}
+
+function stationVigieauZone(station) {
+  const configured = currentRiver.stations.find(s => s.code === station.code);
+  return (configured && configured.vigieau_zone) || null;
+}
+
+function situationLine(kind, label, bodyChildren, extraAttrs) {
+  return createEl('div', { className: 'situation-line', 'data-line': kind, ...extraAttrs }, [
+    createEl('div', { className: 'situation-line-label', textContent: label }),
+    createEl('div', { className: 'situation-line-body' }, bodyChildren),
+  ]);
+}
+
+function buildSeasonLine(situation, series) {
+  const { latest, rank, category, sampleSize, ageDays, isProvisional } = situation;
+  const body = [
+    series.label + ' du ' + formatIsoDate(latest.date, false) + ' : ' + series.format(latest.value)
+      + (isProvisional ? ' (provisoire)' : '') + ' — ',
+  ];
+  if (category === null) {
+    body.push('pas d\'historique comparable pour cette saison');
+  } else {
+    body.push(
+      createEl('strong', { textContent: SITUATION_CATEGORY_LABELS[category] }),
+      ' pour la saison (rang P' + Math.round(rank) + ', ' + sampleSize + ' valeurs)',
+    );
+  }
+  if (ageDays > SITUATION_STALE_AFTER_DAYS) {
+    body.push(createEl('span', {
+      className: 'situation-note',
+      textContent: ' — dernière mesure le ' + formatIsoDate(latest.date, true),
+    }));
+  }
+  return situationLine('season', 'Saison', body);
+}
+
+function buildLowFlowLine(situation, series) {
+  const lowFlow = situation.lowFlowDry5;
+  if (!series.withLowFlow || !(lowFlow > 0)) return null;
+  const ratio = situation.latest.value / lowFlow;
+  const position = ratio <= 1
+    ? 'débit actuel inférieur ou égal au repère'
+    : 'débit actuel : ' + fmtNum(ratio, 1) + ' fois le repère';
+  return situationLine('lowflow', 'Étiage', [
+    'Repère d\'étiage (VCN3 quinquennal sec estimé) : ',
+    createEl('strong', { textContent: formatFlowM3s(lowFlow) }),
+    ' — ' + position,
+  ]);
+}
+
+function buildRestrictionBody(restriction) {
+  if (restriction.status === 'none') return ['Aucune restriction en vigueur'];
+  if (restriction.status !== 'restricted') return ['Niveau de restriction indisponible'];
+
+  const body = [
+    createEl('span', {
+      className: 'situation-badge situation-badge--' + restriction.level.replace(/_/g, '-'),
+      textContent: restriction.label,
+    }),
+  ];
+  const validUntil = formatIsoDate(restriction.validUntil, true);
+  const details = [restriction.zoneName, validUntil && 'jusqu\'au ' + validUntil].filter(Boolean);
+  if (details.length) body.push(details.join(' — '));
+  const decreeUrl = safeHttpsUrl(restriction.decreeUrl);
+  if (decreeUrl) {
+    body.push(' · ', createEl('a', { href: decreeUrl, target: '_blank', rel: 'noopener noreferrer', textContent: 'Arrêté (PDF)' }));
+  }
+  body.push(' · ', createEl('a', { href: VIGIEAU_PUBLIC_URL, target: '_blank', rel: 'noopener noreferrer', textContent: 'vigieau.gouv.fr' }));
+  return body;
+}
+
+function buildRestrictionLine(restriction) {
+  if (restriction.status === 'loading') {
+    return situationLine('restriction', 'Restrictions', ['Consultation de VigiEau…'], { 'data-state': 'loading' });
+  }
+  return situationLine('restriction', 'Restrictions', buildRestrictionBody(restriction), { 'data-state': restriction.status });
+}
+
+function buildMeasureLines(station) {
+  const series = situationSeries(station);
+  const situation = computeSituation(series.records, { todayIso: localTodayIso(), withLowFlow: series.withLowFlow });
+  if (situation === null) {
+    return [situationLine('season', series.label, ['Aucune mesure disponible pour cette station'])];
+  }
+  return [buildSeasonLine(situation, series), buildLowFlowLine(situation, series)].filter(Boolean);
+}
+
+function showSituationLines(lines) {
+  document.getElementById('situation-lines').replaceChildren(...lines);
+}
+
+async function updateSituation() {
+  const token = ++situationRequestToken;
+  const station = currentStation;
+  const panel = document.getElementById('situation-panel');
+  if (!panel || !station) return;
+  panel.dataset.status = 'loading';
+  panel.dataset.station = station.code;
+  document.getElementById('situation-subtitle').textContent = station.name + ' (' + station.dept + ')';
+
+  let lines;
+  try {
+    lines = buildMeasureLines(station);
+  } catch (err) {
+    console.error('[situation] Error:', err);
+    showSituationLines([situationLine('error', 'Situation', ['Situation actuelle indisponible'])]);
+    panel.dataset.status = 'error';
+    return;
+  }
+
+  const zoneCode = stationVigieauZone(station);
+  if (!zoneCode) {
+    showSituationLines(lines);
+    panel.dataset.status = 'ready';
+    return;
+  }
+  showSituationLines([...lines, buildRestrictionLine({ status: 'loading' })]);
+
+  const restriction = await fetchRestriction(zoneCode);
+  if (token !== situationRequestToken || station !== currentStation) return;
+  document.querySelector('#situation-lines [data-line="restriction"]').replaceWith(buildRestrictionLine(restriction));
+  panel.dataset.status = 'ready';
+}
 
 // ─── Init ───
 async function init() {

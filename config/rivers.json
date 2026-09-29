@@ -6,15 +6,15 @@
       "region_label_by_dept": { "14": "Calvados", "61": "Orne" },
       "quality_code": "I2--0200",
       "stations": [
-        { "code": "I200101101", "name": "Belfonds", "dept": "61", "has_Q": true },
-        { "code": "I303101001", "name": "Argentan", "dept": "61", "has_Q": false },
-        { "code": "I312101002", "name": "La Courbe (Amont)", "dept": "61", "has_Q": true },
-        { "code": "I336101001", "name": "Mesnil-Villement", "dept": "14", "has_Q": true },
-        { "code": "I352102001", "name": "Thury-Harcourt", "dept": "14", "has_Q": true },
-        { "code": "I353101001", "name": "Grimbosq (barrage)", "dept": "14", "has_Q": true },
-        { "code": "I362101001", "name": "May-sur-Orne", "dept": "14", "has_Q": true },
-        { "code": "I362102001", "name": "Louvigny", "dept": "14", "has_Q": false },
-        { "code": "I374101001", "name": "Caen (Pont de Vaucelles)", "dept": "14", "has_Q": false }
+        { "code": "I200101101", "name": "Belfonds", "dept": "61", "has_Q": true, "vigieau_zone": "28_61_0006" },
+        { "code": "I303101001", "name": "Argentan", "dept": "61", "has_Q": false, "vigieau_zone": "28_61_0006" },
+        { "code": "I312101002", "name": "La Courbe (Amont)", "dept": "61", "has_Q": true, "vigieau_zone": "28_61_0007" },
+        { "code": "I336101001", "name": "Mesnil-Villement", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0005" },
+        { "code": "I352102001", "name": "Thury-Harcourt", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0005" },
+        { "code": "I353101001", "name": "Grimbosq (barrage)", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0005" },
+        { "code": "I362101001", "name": "May-sur-Orne", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0004" },
+        { "code": "I362102001", "name": "Louvigny", "dept": "14", "has_Q": false, "vigieau_zone": "28_14_0004" },
+        { "code": "I374101001", "name": "Caen (Pont de Vaucelles)", "dept": "14", "has_Q": false, "vigieau_zone": "28_14_0004" }
       ],
       "narrative": {
         "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie montrent toutes un recul du débit depuis 1999.",
@@ -49,8 +49,8 @@
       "region_label_by_dept": { "14": "Calvados" },
       "quality_code": "I26-0400",
       "stations": [
-        { "code": "I371201001", "name": "Épinay-sur-Odon", "dept": "14", "has_Q": true },
-        { "code": "I264000101", "name": "Gavrus [Pont Neuf]", "dept": "14", "has_Q": true }
+        { "code": "I371201001", "name": "Épinay-sur-Odon", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0005" },
+        { "code": "I264000101", "name": "Gavrus [Pont Neuf]", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0005" }
       ],
       "narrative": {
         "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie sur la période 1999-2020 montrent toutes un recul de leur débit, l'Odon faisant partie de ces cours d'eau bas-normands au régime pluvial océanique.",
@@ -81,8 +81,8 @@
       "region_label_by_dept": { "14": "Calvados" },
       "quality_code": "I3--0200",
       "stations": [
-        { "code": "I402201001", "name": "Juvigny-sur-Seulles", "dept": "14", "has_Q": true },
-        { "code": "I403201001", "name": "Tierceville", "dept": "14", "has_Q": true }
+        { "code": "I402201001", "name": "Juvigny-sur-Seulles", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0001" },
+        { "code": "I403201001", "name": "Tierceville", "dept": "14", "has_Q": true, "vigieau_zone": "28_14_0001" }
       ],
       "narrative": {
         "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie sur la période 1999-2020 montrent toutes un recul de leur débit ; la Seulles, fleuve côtier du Bessin au régime pluvial océanique, s'inscrit dans ce constat régional.",

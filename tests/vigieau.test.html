@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tests vigieau.js</title>
+</head>
+<body>
+<pre id="test-results" data-status="running"></pre>
+<script src="../js/vigieau.js"></script>
+<script src="js/harness.js"></script>
+<script>
+const ZONE_14 = '28_14_0001';
+const OTHER_ZONE_14 = '28_14_0002';
+
+function jsonResponse(body, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => body };
+}
+
+function recordingFetch(response) {
+  const calls = [];
+  const fetchFn = async (url, options) => {
+    calls.push({ url, options });
+    return typeof response === 'function' ? response(url) : response;
+  };
+  fetchFn.calls = calls;
+  return fetchFn;
+}
+
+function surfaceZone(code, overrides = {}) {
+  return {
+    code,
+    nom: 'Bessin',
+    type: 'SUP',
+    niveauGravite: 'crise',
+    arrete: { dateFinValidite: '2026-10-31', cheminFichier: 'https://example.org/arrete.pdf' },
+    ...overrides,
+  };
+}
+
+test('zoneDepartment extrait le département', () => {
+  assertEqual(zoneDepartment('28_14_0001'), '14');
+  assertEqual(zoneDepartment('28_2A_0003'), '2A');
+  assertEqual(zoneDepartment('11_971_0001'), '971');
+});
+
+test('zoneDepartment rejette les codes invalides', () => {
+  assertEqual(zoneDepartment('n_importe_quoi'), null);
+  assertEqual(zoneDepartment(''), null);
+  assertEqual(zoneDepartment(null), null);
+  assertEqual(zoneDepartment(undefined), null);
+  assertEqual(zoneDepartment(42), null);
+});
+
+test('VIGIEAU_LEVELS ordonne les sévérités', () => {
+  assertEqual(VIGIEAU_LEVELS.vigilance.severity, 1);
+  assertEqual(VIGIEAU_LEVELS.alerte.severity, 2);
+  assertEqual(VIGIEAU_LEVELS.alerte_renforcee.label, 'Alerte renforcée');
+  assertEqual(VIGIEAU_LEVELS.alerte_renforcee.severity, 3);
+  assertEqual(VIGIEAU_LEVELS.crise.severity, 4);
+});
+
+test('pickSurfaceZone ignore les zones AEP et SOU de même code', () => {
+  const aep = surfaceZone(ZONE_14, { type: 'AEP', niveauGravite: 'vigilance' });
+  const sup = surfaceZone(ZONE_14);
+  assertEqual(pickSurfaceZone([aep, sup], ZONE_14), sup);
+  assertEqual(pickSurfaceZone([aep], ZONE_14), null);
+});
+
+test('pickSurfaceZone tolère les entrées dégradées', () => {
+  assertEqual(pickSurfaceZone(null, ZONE_14), null);
+  assertEqual(pickSurfaceZone([null, {}], ZONE_14), null);
+  assertEqual(pickSurfaceZone([], ZONE_14), null);
+});
+
+test('safeHttpsUrl accepte https uniquement', () => {
+  assertEqual(safeHttpsUrl('https://example.org/a.pdf'), 'https://example.org/a.pdf');
+  assertEqual(safeHttpsUrl('http://example.org/a.pdf'), null);
+  assertEqual(safeHttpsUrl('javascript:alert(1)'), null);
+  assertEqual(safeHttpsUrl(''), null);
+  assertEqual(safeHttpsUrl(null), null);
+  assertEqual(safeHttpsUrl(undefined), null);
+});
+
+test('fetchRestriction : zone SUP trouvée', async () => {
+  clearVigieauCache();
+  const fetchFn = recordingFetch(jsonResponse([surfaceZone(ZONE_14)]));
+  const result = await fetchRestriction(ZONE_14, { fetchFn });
+  assertEqual(result.status, 'restricted');
+  assertEqual(result.level, 'crise');
+  assertEqual(result.label, 'Crise');
+  assertEqual(result.severity, 4);
+  assertEqual(result.zoneName, 'Bessin');
+  assertEqual(result.validUntil, '2026-10-31');
+  assertEqual(result.decreeUrl, 'https://example.org/arrete.pdf');
+  assertEqual(fetchFn.calls[0].url, 'https://api.vigieau.gouv.fr/api/zones/departement/14');
+});
+
+test('fetchRestriction : URL d\'arrêté non https rejetée', async () => {
+  clearVigieauCache();
+  const zone = surfaceZone(ZONE_14, { arrete: { dateFinValidite: '2026-10-31', cheminFichier: 'javascript:alert(1)' } });
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse([zone])) });
+  assertEqual(result.status, 'restricted');
+  assertEqual(result.decreeUrl, null);
+});
+
+test('fetchRestriction : zone AEP seule ignorée', async () => {
+  clearVigieauCache();
+  const zones = [surfaceZone(ZONE_14, { type: 'AEP' })];
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse(zones)) });
+  assertEqual(result.status, 'none');
+});
+
+test('fetchRestriction : zone absente donne none', async () => {
+  clearVigieauCache();
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse([])) });
+  assertEqual(result.status, 'none');
+});
+
+test('fetchRestriction : HTTP 500 donne unavailable', async () => {
+  clearVigieauCache();
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse(null, 500)) });
+  assertEqual(result.status, 'unavailable');
+  assertTrue(typeof result.reason === 'string' && result.reason.length > 0);
+});
+
+test('fetchRestriction : JSON invalide donne unavailable', async () => {
+  clearVigieauCache();
+  const brokenJson = { ok: true, status: 200, json: async () => { throw new SyntaxError('JSON invalide'); } };
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(brokenJson) });
+  assertEqual(result.status, 'unavailable');
+});
+
+test('fetchRestriction : réponse qui n\'est pas un tableau donne unavailable', async () => {
+  clearVigieauCache();
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse({ message: 'x' })) });
+  assertEqual(result.status, 'unavailable');
+});
+
+test('fetchRestriction : niveau de gravité inconnu donne unavailable', async () => {
+  clearVigieauCache();
+  const zones = [surfaceZone(ZONE_14, { niveauGravite: 'apocalypse' })];
+  const result = await fetchRestriction(ZONE_14, { fetchFn: recordingFetch(jsonResponse(zones)) });
+  assertEqual(result.status, 'unavailable');
+});
+
+test('fetchRestriction : échec réseau donne unavailable sans lever', async () => {
+  clearVigieauCache();
+  const fetchFn = async () => { throw new TypeError('Failed to fetch'); };
+  const result = await fetchRestriction(ZONE_14, { fetchFn });
+  assertEqual(result.status, 'unavailable');
+});
+
+test('fetchRestriction : timeout avec AbortSignal', async () => {
+  clearVigieauCache();
+  let receivedSignal = null;
+  const neverResolves = (url, options) => {
+    receivedSignal = options.signal;
+    return new Promise(() => {});
+  };
+  const result = await fetchRestriction(ZONE_14, { fetchFn: neverResolves, timeoutMs: 20 });
+  assertEqual(result.status, 'unavailable');
+  assertEqual(result.reason, 'timeout');
+  assertTrue(receivedSignal !== null && receivedSignal.aborted);
+});
+
+test('fetchRestriction : code invalide sans appel réseau', async () => {
+  clearVigieauCache();
+  const fetchFn = recordingFetch(jsonResponse([]));
+  const result = await fetchRestriction('invalide', { fetchFn });
+  assertEqual(result.status, 'unavailable');
+  assertEqual(fetchFn.calls.length, 0);
+});
+
+test('fetchRestriction : un seul appel pour deux zones du même département', async () => {
+  clearVigieauCache();
+  const fetchFn = recordingFetch(jsonResponse([
+    surfaceZone(ZONE_14),
+    surfaceZone(OTHER_ZONE_14, { niveauGravite: 'alerte_renforcee', nom: 'Orne aval' }),
+  ]));
+  const first = await fetchRestriction(ZONE_14, { fetchFn });
+  const second = await fetchRestriction(OTHER_ZONE_14, { fetchFn });
+  assertEqual(first.level, 'crise');
+  assertEqual(second.level, 'alerte_renforcee');
+  assertEqual(fetchFn.calls.length, 1);
+});
+
+test('fetchRestriction : un échec n\'est pas mémoïsé', async () => {
+  clearVigieauCache();
+  let attempt = 0;
+  const fetchFn = async () => {
+    attempt += 1;
+    return attempt === 1 ? jsonResponse(null, 500) : jsonResponse([surfaceZone(ZONE_14)]);
+  };
+  const first = await fetchRestriction(ZONE_14, { fetchFn });
+  const second = await fetchRestriction(ZONE_14, { fetchFn });
+  assertEqual(first.status, 'unavailable');
+  assertEqual(second.status, 'restricted');
+  assertEqual(attempt, 2);
+});
+</script>
+</body>
+</html>

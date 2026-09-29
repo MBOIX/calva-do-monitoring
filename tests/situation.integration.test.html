@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Tests d'intégration situation.js (données réelles)</title>
+</head>
+<body>
+<pre id="test-results" data-status="running">Exécution…</pre>
+<script src="../js/situation.js"></script>
+<script src="js/harness.js"></script>
+<script>
+// Date fixe : les résultats ne dépendent pas du jour d'exécution.
+const TODAY_ISO = '2026-09-29';
+
+async function loadJson(path) {
+  const response = await fetch(path, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`${path} : HTTP ${response.status}`);
+  return response.json();
+}
+
+async function loadFlowRecords(riverId, stationCode) {
+  return (await loadJson(`../data_cache/${riverId}/${stationCode}_QmnJ.json`)).records;
+}
+
+// Références Banque Hydro du VCN3 quinquennal sec, en L/s.
+test('VCN3 quinquennal sec de la Seulles à Tierceville proche de 270 L/s', async () => {
+  const records = await loadFlowRecords('seulles', 'I403201001');
+
+  const situation = computeSituation(records, { todayIso: TODAY_ISO, withLowFlow: true });
+
+  assertTrue(situation !== null, 'computeSituation ne doit pas renvoyer null');
+  const value = situation.lowFlowDry5;
+  assertTrue(value >= 200 && value <= 350, `lowFlowDry5 hors de [200, 350] L/s : ${value}`);
+});
+
+test('VCN3 quinquennal sec de l\'Odon à Épinay-sur-Odon proche de 15 L/s', async () => {
+  const records = await loadFlowRecords('odon', 'I371201001');
+
+  const situation = computeSituation(records, { todayIso: TODAY_ISO, withLowFlow: true });
+
+  assertTrue(situation !== null, 'computeSituation ne doit pas renvoyer null');
+  const value = situation.lowFlowDry5;
+  assertTrue(value >= 5 && value <= 60, `lowFlowDry5 hors de [5, 60] L/s : ${value}`);
+});
+
+test('computeSituation : lowFlowDry5 est null quand withLowFlow est faux', async () => {
+  const records = await loadFlowRecords('seulles', 'I403201001');
+
+  const situation = computeSituation(records, { todayIso: TODAY_ISO, withLowFlow: false });
+
+  assertEqual(situation.lowFlowDry5, null);
+});
+
+test('computeSituation non nul et cohérent pour chaque station de chaque rivière', async () => {
+  const { rivers } = await loadJson('../config/rivers.json');
+  const problems = [];
+  let checkedStations = 0;
+
+  for (const river of rivers) {
+    for (const station of river.stations) {
+      const grandeur = station.has_Q ? 'QmnJ' : 'HIXnJ';
+      const { records } = await loadJson(`../data_cache/${river.id}/${station.code}_${grandeur}.json`);
+      const situation = computeSituation(records, { todayIso: TODAY_ISO, withLowFlow: station.has_Q });
+      const where = `${river.id}/${station.code}`;
+      checkedStations++;
+
+      if (situation === null) { problems.push(`${where} : situation nulle`); continue; }
+      if (situation.sampleSize <= 0) problems.push(`${where} : aucun échantillon saisonnier`);
+      if (situation.category === null) problems.push(`${where} : catégorie nulle`);
+      if (!(situation.rank >= 0 && situation.rank <= 100)) problems.push(`${where} : rang hors [0, 100] : ${situation.rank}`);
+      if (situation.ageDays < 0) problems.push(`${where} : âge négatif`);
+      if (!station.has_Q && situation.lowFlowDry5 !== null) problems.push(`${where} : VCN3 calculé sans débit`);
+      if (station.has_Q && situation.lowFlowDry5 !== null && !(situation.lowFlowDry5 > 0)) {
+        problems.push(`${where} : lowFlowDry5 non positif : ${situation.lowFlowDry5}`);
+      }
+    }
+  }
+
+  assertTrue(checkedStations > 0, 'aucune station vérifiée');
+  assertEqual(problems, []);
+});
+
+test('chaque rivière a au moins une station avec un repère d\'étiage calculable', async () => {
+  const { rivers } = await loadJson('../config/rivers.json');
+  const riversWithoutLowFlow = [];
+
+  for (const river of rivers) {
+    const lowFlows = [];
+    for (const station of river.stations.filter(s => s.has_Q)) {
+      const records = await loadFlowRecords(river.id, station.code);
+      lowFlows.push(computeSituation(records, { todayIso: TODAY_ISO, withLowFlow: true }).lowFlowDry5);
+    }
+    if (lowFlows.every(value => value === null)) riversWithoutLowFlow.push(river.id);
+  }
+
+  assertEqual(riversWithoutLowFlow, []);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Test de bout en bout du dashboard</title>
+</head>
+<body>
+<pre id="test-results" data-status="running">Exécution…</pre>
+<script src="js/harness.js"></script>
+<script>
+// Le dashboard est chargé dans une iframe same-origin (srcdoc) dans laquelle on injecte, avant
+// tout script de la page : la capture des erreurs et un faux serveur VigiEau. Les tests ne
+// dépendent donc ni de l'état réel de VigiEau ni de son accessibilité.
+
+const WAIT_TIMEOUT_MS = 10000;
+const POLL_INTERVAL_MS = 25;
+const SETTLE_DELAY_MS = 150;
+
+// Scénario : Seulles (14, zone 0001) en crise, Orne moyenne et Odon (14, zone 0005) en alerte
+// renforcée avec un arrêté en http:// (lien refusé), Orne aval (14, zone 0004) absente
+// de la réponse, Orne amont (61) en erreur HTTP.
+const SCENARIO = {
+  zonesByDepartment: {
+    '14': [
+      { code: '28_14_0001', type: 'AEP', niveauGravite: 'vigilance', nom: 'Zone AEP à ignorer' },
+      {
+        code: '28_14_0001', type: 'SUP', niveauGravite: 'crise', nom: 'Bessin <b>test</b>',
+        arrete: { dateFinValidite: '2026-10-31', cheminFichier: 'https://example.org/arrete-bessin.pdf' },
+      },
+      {
+        code: '28_14_0005', type: 'SUP', niveauGravite: 'alerte_renforcee', nom: 'Orne moyenne',
+        arrete: { dateFinValidite: '2026-10-15', cheminFichier: 'http://example.org/non-securise.pdf' },
+      },
+    ],
+  },
+  failingDepartments: ['61'],
+};
+
+const EXPECTED_BY_ZONE = {
+  '28_14_0001': { state: 'restricted', label: 'Crise', badgeClass: 'situation-badge--crise' },
+  '28_14_0005': { state: 'restricted', label: 'Alerte renforcée', badgeClass: 'situation-badge--alerte-renforcee' },
+  '28_14_0004': { state: 'none' },
+  '28_61_0006': { state: 'unavailable' },
+};
+
+function buildPrelude(scenario, heldDepartments) {
+  return `(() => {
+    window.__pageErrors = [];
+    window.__vigieauCalls = [];
+    window.addEventListener('error', event => window.__pageErrors.push('error : ' + event.message));
+    window.addEventListener('unhandledrejection', event => {
+      window.__pageErrors.push('rejet : ' + (event.reason && event.reason.message ? event.reason.message : event.reason));
+    });
+    const originalConsoleError = console.error;
+    console.error = (...args) => {
+      window.__pageErrors.push('console.error : ' + args.join(' '));
+      originalConsoleError.apply(console, args);
+    };
+
+    const scenario = ${JSON.stringify(scenario)};
+    const heldDepartments = ${JSON.stringify(heldDepartments)};
+    let releaseHeld;
+    const heldGate = new Promise(resolve => { releaseHeld = resolve; });
+    window.__releaseHeldResponses = () => releaseHeld();
+
+    const realFetch = window.fetch.bind(window);
+    const VIGIEAU_URL = /^https:\\/\\/api\\.vigieau\\.gouv\\.fr\\/api\\/zones\\/departement\\/(\\w+)$/;
+    window.fetch = async (url, options) => {
+      const match = VIGIEAU_URL.exec(String(url));
+      if (!match) return realFetch(url, options);
+      const department = match[1];
+      window.__vigieauCalls.push(department);
+      if (heldDepartments.includes(department)) await heldGate;
+      if (scenario.failingDepartments.includes(department)) return new Response('erreur', { status: 500 });
+      const zones = scenario.zonesByDepartment[department] || [];
+      return new Response(JSON.stringify(zones), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    };
+  })();`;
+}
+
+async function openDashboard({ heldDepartments = [] } = {}) {
+  const source = await (await fetch('../index.html', { cache: 'no-cache' })).text();
+  const baseUrl = new URL('../', location.href).href;
+  const injection = `<base href="${baseUrl}"><script>${buildPrelude(SCENARIO, heldDepartments)}<\/script>`;
+  const html = source.replace('<head>', '<head>' + injection);
+  assertTrue(html !== source, 'balise <head> introuvable dans index.html');
+
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:absolute;left:-9999px;width:1280px;height:900px';
+  const loaded = new Promise(resolve => frame.addEventListener('load', resolve, { once: true }));
+  frame.srcdoc = html;
+  document.body.appendChild(frame);
+  await loaded;
+  await waitFor('chargement initial du dashboard', () => {
+    const panel = situationPanel(frame.contentWindow);
+    return Boolean(panel) && panel.dataset.status === 'ready';
+  });
+  return frame;
+}
+
+function sleep(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function waitFor(description, condition) {
+  const deadline = Date.now() + WAIT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (condition()) return;
+    await sleep(POLL_INTERVAL_MS);
+  }
+  throw new Error(`délai dépassé en attendant : ${description}`);
+}
+
+// Les `let` du script inline du dashboard ne sont pas des propriétés de window : on les lit par eval.
+function readGlobal(win, expression) {
+  return win.eval(expression);
+}
+
+function situationPanel(win) {
+  return win.document.getElementById('situation-panel');
+}
+
+function isPanelReadyFor(win, riverId, stationCode) {
+  const panel = situationPanel(win);
+  return Boolean(panel)
+    && panel.dataset.status === 'ready'
+    && panel.dataset.station === stationCode
+    && readGlobal(win, 'currentRiver && currentRiver.id') === riverId
+    && readGlobal(win, 'currentStation && currentStation.code') === stationCode;
+}
+
+function dispatchChange(select, value) {
+  select.value = value;
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function assertNoPageError(win, context) {
+  assertEqual(win.__pageErrors, [], `erreurs capturées (${context})`);
+}
+
+function lineOf(win, kind) {
+  return situationPanel(win).querySelector(`[data-line="${kind}"]`);
+}
+
+function assertSeasonLine(win, station, context) {
+  const line = lineOf(win, 'season');
+  assertTrue(line !== null, `ligne 1 absente (${context})`);
+  const unit = station.has_Q ? 'm³/s' : 'mm';
+  assertTrue(line.textContent.includes(unit), `ligne 1 sans unité ${unit} (${context}) : ${line.textContent}`);
+}
+
+function assertLowFlowLine(win, station, context) {
+  const line = lineOf(win, 'lowflow');
+  const isComputable = station.has_Q
+    && readGlobal(win, 'flowData') !== null
+    && win.computeLowFlowDry5(readGlobal(win, 'flowData').records) !== null;
+  assertEqual(line !== null, isComputable, `présence de la ligne 2 (${context})`);
+  if (line) assertTrue(line.textContent.includes('VCN3'), `ligne 2 sans VCN3 (${context})`);
+}
+
+function assertRestrictionLine(win, station, context) {
+  const zone = win.stationVigieauZone(station);
+  const line = lineOf(win, 'restriction');
+  if (zone === null) {
+    assertEqual(line, null, `ligne 3 attendue absente sans vigieau_zone (${context})`);
+    return;
+  }
+  const expected = EXPECTED_BY_ZONE[zone];
+  assertTrue(expected !== undefined, `zone ${zone} absente du scénario (${context})`);
+  assertTrue(line !== null, `ligne 3 absente (${context})`);
+  assertEqual(line.dataset.state, expected.state, `état de la ligne 3 (${context}, zone ${zone})`);
+  if (expected.state === 'restricted') assertRestrictedLine(line, expected, context);
+}
+
+function assertRestrictedLine(line, expected, context) {
+  const badge = line.querySelector('.situation-badge');
+  assertTrue(badge !== null, `pastille absente (${context})`);
+  assertEqual(badge.textContent, expected.label, `libellé de la pastille (${context})`);
+  assertTrue(badge.classList.contains(expected.badgeClass), `classe ${expected.badgeClass} absente (${context})`);
+  const hrefs = [...line.querySelectorAll('a')].map(link => link.getAttribute('href'));
+  assertTrue(hrefs.includes('https://vigieau.gouv.fr'), `lien permanent VigiEau absent (${context})`);
+  assertEqual(hrefs.filter(href => !href.startsWith('https://')), [], `lien non https (${context})`);
+}
+
+function assertStationRendered(win, station, context) {
+  assertSeasonLine(win, station, context);
+  assertLowFlowLine(win, station, context);
+  assertRestrictionLine(win, station, context);
+  assertNoPageError(win, context);
+}
+
+async function showStation(win, riverId, stationCode) {
+  dispatchChange(win.document.getElementById('station-select'), stationCode);
+  await waitFor(`encart prêt pour ${riverId}/${stationCode}`, () => isPanelReadyFor(win, riverId, stationCode));
+}
+
+async function showRiver(win, riverId) {
+  dispatchChange(win.document.getElementById('river-select'), riverId);
+  await waitFor(`encart prêt pour la rivière ${riverId}`, () => {
+    const stationCode = readGlobal(win, 'currentStation && currentStation.code');
+    return Boolean(stationCode) && isPanelReadyFor(win, riverId, stationCode);
+  });
+}
+
+test('encart de chaque station de chaque rivière du sélecteur', async () => {
+  const frame = await openDashboard();
+  try {
+    const win = frame.contentWindow;
+    const riverIds = [...win.document.getElementById('river-select').options].map(option => option.value);
+    assertTrue(riverIds.length > 0, 'sélecteur de rivières vide');
+
+    for (const riverId of riverIds) {
+      await showRiver(win, riverId);
+      const stations = readGlobal(win, 'stations');
+      assertTrue(stations.length > 0, `aucune station pour ${riverId}`);
+      for (const station of stations) {
+        await showStation(win, riverId, station.code);
+        assertStationRendered(win, station, `${riverId}/${station.code}`);
+      }
+    }
+  } finally {
+    frame.remove();
+  }
+});
+
+test('texte de VigiEau affiché comme texte, jamais comme HTML', async () => {
+  const frame = await openDashboard();
+  try {
+    const win = frame.contentWindow;
+    await showRiver(win, 'seulles');
+
+    const line = lineOf(win, 'restriction');
+    assertEqual(line.querySelector('b'), null, 'balise <b> injectée par le nom de zone');
+    assertTrue(line.textContent.includes('Bessin <b>test</b>'), `nom de zone non affiché tel quel : ${line.textContent}`);
+    assertTrue(line.textContent.includes('31/10/2026'), 'date de fin de validité absente');
+  } finally {
+    frame.remove();
+  }
+});
+
+test('réponse VigiEau tardive ignorée après un changement de rivière', async () => {
+  const frame = await openDashboard({ heldDepartments: ['14'] });
+  try {
+    const win = frame.contentWindow;
+    const initialRiverId = readGlobal(win, 'currentRiver.id');
+    const initialStation = readGlobal(win, 'currentStation');
+    assertEqual(win.stationVigieauZone(initialStation), '28_61_0006', 'la rivière initiale doit être dans le 61');
+
+    dispatchChange(win.document.getElementById('river-select'), 'seulles');
+    await waitFor('requête VigiEau du 14 en attente', () => win.__vigieauCalls.includes('14'));
+    dispatchChange(win.document.getElementById('river-select'), initialRiverId);
+    await waitFor('retour à la rivière initiale', () => isPanelReadyFor(win, initialRiverId, initialStation.code));
+    win.__releaseHeldResponses();
+    await sleep(SETTLE_DELAY_MS);
+
+    assertTrue(isPanelReadyFor(win, initialRiverId, initialStation.code), 'l\'encart ne correspond plus à la station affichée');
+    assertEqual(lineOf(win, 'restriction').dataset.state, 'unavailable', 'la réponse tardive du 14 a écrasé l\'encart');
+    assertNoPageError(win, 'réponse tardive');
+  } finally {
+    frame.remove();
+  }
+});
+</script>
+</body>
+</html>
