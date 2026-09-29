@@ -35,7 +35,8 @@ Vocabulaire métier : `HIXnJ` = hauteur max journalière (mm) ; `QmnJ` = débit 
 (L/s) ; qualité = 5 paramètres SANDRE : `1311` O₂, `1302` pH, `1340` nitrates, `1339` nitrites,
 `1335` ammonium.
 
-`config/rivers.json` déclare par rivière : `id`, `name`, `region_label_by_dept`,
+`config/rivers.json` déclare par rivière : `id`, `name`, `name_with_article` (optionnel,
+sinon « l'<name> »), `region_label_by_dept`,
 `quality_code` (code SANDRE rivière), `stations` (hydrométrie, `has_Q`), `narrative` (textes
 d'analyse + sources propres à la rivière, affichés tels quels).
 

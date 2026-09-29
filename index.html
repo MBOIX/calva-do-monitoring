@@ -460,8 +460,9 @@ function riverDataPath(file) {
 }
 
 function riverLabel() {
-  // L'Orne, L'Odon — les deux noms s'élident ; suffisant pour les rivières gérées.
-  return currentRiver ? "l'" + currentRiver.name : 'la rivière';
+  // Élision par défaut (l'Orne, l'Odon) ; `name_with_article` la remplace (la Seulles).
+  if (!currentRiver) return 'la rivière';
+  return currentRiver.name_with_article || "l'" + currentRiver.name;
 }
 
 function narrativeNote(key) {
