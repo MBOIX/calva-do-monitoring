@@ -1,0 +1,17 @@
+{
+  "stations": [
+    {
+      "code": "I402201001",
+      "name": "Juvigny-sur-Seulles",
+      "dept": "14",
+      "has_Q": true
+    },
+    {
+      "code": "I403201001",
+      "name": "Tierceville",
+      "dept": "14",
+      "has_Q": true
+    }
+  ],
+  "updated_at": "2026-09-29T13:50:29.894091"
+}

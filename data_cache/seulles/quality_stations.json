@@ -1,0 +1,26 @@
+{
+  "stations": [
+    {
+      "code": "03246000",
+      "name": "LA SEULLES A TIERCEVILLE 1",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 2543
+    },
+    {
+      "code": "03245665",
+      "name": "LA SEULLES A ANCTOVILLE 2",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 1127
+    },
+    {
+      "code": "03245840",
+      "name": "LA SEULLES A BUCEELS 1",
+      "longitude": null,
+      "latitude": null,
+      "total_records": 1018
+    }
+  ],
+  "updated_at": "2026-09-29T13:51:47.714562"
+}

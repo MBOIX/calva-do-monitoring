@@ -73,6 +73,39 @@
           { "label": "Banque des Territoires — Recharge des nappes -15 à -30 %", "url": "https://www.banquedesterritoires.fr/changement-climatique-la-recharge-des-nappes-deau-souterraines-pourrait-baisser-de-10-25-en-2070" }
         ]
       }
+    },
+    {
+      "id": "seulles",
+      "name": "Seulles",
+      "name_with_article": "la Seulles",
+      "region_label_by_dept": { "14": "Calvados" },
+      "quality_code": "I3--0200",
+      "stations": [
+        { "code": "I402201001", "name": "Juvigny-sur-Seulles", "dept": "14", "has_Q": true },
+        { "code": "I403201001", "name": "Tierceville", "dept": "14", "has_Q": true }
+      ],
+      "narrative": {
+        "heightTrendNote": "Le GIEC Normand confirme que les 25 rivières suivies en Normandie sur la période 1999-2020 montrent toutes un recul de leur débit ; la Seulles, fleuve côtier du Bessin au régime pluvial océanique, s'inscrit dans ce constat régional.",
+        "flowTrendNote": "L'étude nationale Explore2 (INRAE, 2024) prévoit une baisse des débits d'été d'environ -30 % (de -15 % à -50 %) à l'horizon 2100 pour les cours d'eau français, dont les fleuves côtiers du bassin Seine-Normandie comme la Seulles.",
+        "summerNote": "C'est l'étiage : à Tierceville, le débit moyen de la Seulles est d'environ 2,5 m³/s, mais son débit minimal de basse eau (VCN3) tombe à 0,27 m³/s en année sèche, soit près de dix fois moins. Le Bessin figure parmi les secteurs les plus sensibles du Calvados : en juillet 2026, le débit de la Seulles amont est passé sous le seuil de crise et le secteur a été placé en alerte renforcée.",
+        "projectionInsight": {
+          "value": "-30 %",
+          "detail": "Selon Explore2 (INRAE, 2024), les débits d'été pourraient reculer d'environ -30 % (jusqu'à -50 %) sur le bassin Seine-Normandie d'ici 2100. Le GIEC Normand rappelle que la température moyenne en Normandie a déjà gagné +1,1 °C (1995-2024 vs 1965-1994) et pourrait progresser de +1,8 °C d'ici 2050 (INSEE/Météo France)."
+        },
+        "contextParagraph": "La baisse de niveau et de débit de la Seulles rejoint un constat régional. Le GIEC Normand a analysé 25 rivières réparties sur toute la Normandie entre 1999 et 2020 : toutes montrent un débit en recul. Cette baisse s'explique moins par les pluies, qui ne diminuent pas nettement, que par la hausse des températures et de l'évaporation, ainsi que par les prélèvements humains. Les pluies se redistribuent : hivers plus humides, étés plus secs, avec davantage de ruissellement et moins d'infiltration. La Seulles, fleuve côtier de 72 km qui prend sa source à Jurques et draine 430 km² avant de se jeter dans la Manche à Courseulles-sur-Mer, est exposée à ces étés secs : ses débits d'étiage sont parmi les plus faibles du département.",
+        "projectionsParagraph": "Pour l'avenir, l'étude Explore2 (INRAE, 2024) anticipe une baisse des débits d'été d'environ -30 %, pouvant atteindre -50 %, à l'horizon 2100. La recharge des nappes souterraines qui soutiennent les rivières en été pourrait reculer de -15 % à -30 % selon le GIEC Normand. L'Agence de l'eau Seine-Normandie déploie une stratégie d'adaptation visant à économiser et mieux partager la ressource, tandis que le Syndicat mixte de la Seulles et de ses affluents (SMSA) conduit depuis 2009 la restauration du cours d'eau. Les arrêtés sécheresse répétés dans le Calvados, avec l'alerte renforcée sur le Bessin en juillet 2026, illustrent déjà cette tension croissante sur la ressource en eau.",
+        "sources": [
+          { "label": "Hub'Eau / Banque Hydro", "url": "https://hubeau.eaufrance.fr/page/api-hydrometrie" },
+          { "label": "HydroPortail — Seulles à Tierceville", "url": "https://www.hydro.eaufrance.fr/stationhydro/I403201001/synthese" },
+          { "label": "Seulles — données hydrologiques (Wikipédia / Banque Hydro)", "url": "https://fr.wikipedia.org/wiki/Seulles" },
+          { "label": "L'Agriculteur normand — Alerte renforcée dans le Calvados (juillet 2026)", "url": "https://www.agriculteur-normand.com/restriction-des-usages-de-leau-lalerte-renforcee-est-activee-dans-le-calvados" },
+          { "label": "Préfecture du Calvados — Sécheresse", "url": "https://www.calvados.gouv.fr/Actualites/La-secheresse" },
+          { "label": "GIEC Normand — L'eau : disponibilité, qualité, risques naturels (25 rivières 1999-2020)", "url": "https://www.datanormandie.fr/sites/default/files/dataset/c47/493af-d297-4575-a8e4-80c48ab0283a/giec_eau.pdf" },
+          { "label": "INSEE Analyses Normandie — Température +1,1 °C observé, +1,8 °C projeté en 2050", "url": "https://www.insee.fr/fr/statistiques/8733930" },
+          { "label": "Explore2 (INRAE / Ministère Transition écologique) — débits d'été -30 % d'ici 2100", "url": "https://www.ecologie.gouv.fr/politiques-publiques/explore2-impacts-du-changement-climatique-ressource-eau-horizon-2100" },
+          { "label": "Agence de l'eau Seine-Normandie — GIEC normand et adaptation", "url": "https://www.eau-seine-normandie.fr/actualites/GIEC-normand" }
+        ]
+      }
     }
   ]
 }
