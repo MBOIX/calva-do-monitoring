@@ -5,6 +5,10 @@ robustesse front, scripts ETL, produit/UX). Les trois retenues se complètent :
 la n° 2 empêche la corruption des données à la source, la n° 1 la bloque avant
 publication, la n° 3 la rend visible si elle passe quand même.
 
+Complété le 29 septembre 2026 par un volet produit lié à la sécheresse (n° 4 à 6) :
+fin septembre 2026, les secteurs Bessin et Virois du Calvados sont en **crise**,
+Orne moyenne et aval en **alerte renforcée** (source : API VigiEau).
+
 ## À implémenter (par ordre de priorité)
 
 ### 1. Gate d'intégrité `rivers.json` ↔ `data_cache/` dans le déploiement — effort M
@@ -56,6 +60,58 @@ pour un visiteur de distinguer « panne de données » de « rien à signaler »
 
 **Fichiers** : `index.html`
 
+## Volet sécheresse (produit)
+
+### 4. Encart « Situation actuelle » en tête du dashboard — effort M/L
+
+Le dashboard montre des tendances longues mais ne dit pas si la rivière va mal
+**maintenant**. Plan d'implémentation détaillé : `docs/plans/situation-actuelle.md`.
+
+- [ ] Position du dernier débit face à l'historique du même jour de l'année
+      (percentile, libellé « très bas / bas / normal / haut »).
+- [ ] Repères d'étiage calculés sur l'historique (ex. VCN3 quinquennal sec).
+- [ ] Niveau de restriction en vigueur (vigilance → crise) via l'API VigiEau
+      (`api.vigieau.gouv.fr`, publique, sans clé, CORS `*`).
+
+**Fichiers** : `index.html`, `config/rivers.json`, `CLAUDE.md` (contrat), tests.
+
+### 5. Fraîcheur des données visible et automatisable — effort M
+
+En crise sécheresse, une semaine de retard fausse la lecture ; or les données ne
+changent que par commit manuel.
+
+- [ ] Badge « Données au JJ/MM/AAAA » dans le header et l'onglet Qualité
+      (`date_max` / `fetched_at` déjà présents dans les caches) — reprend l'idée
+      auparavant écartée.
+- [ ] Distinguer visuellement les mesures provisoires : les valeurs récentes
+      Hub'Eau portent `quality: "Douteuse"` (ex. Seulles, septembre 2026) et sont
+      aujourd'hui tracées comme des valeurs validées (pointillé ou opacité réduite).
+- [ ] **Décision à prendre** : rafraîchissement planifié (GitHub Actions `schedule`)
+      qui exécute l'ETL, valide et committe. Revient sur le choix documenté dans
+      `CLAUDE.md` (« pas de cron ni d'ETL côté CI »). **Pré-requis impératifs** :
+      n° 1 (gate d'intégrité) et n° 2 (écriture atomique), sinon un appel Hub'Eau
+      en échec publierait des données partielles.
+
+**Fichiers** : `index.html`, éventuellement `.github/workflows/refresh.yml` (nouveau).
+
+### 6. Indicateurs d'étiage et observations de terrain — effort M
+
+La moyenne annuelle masque la sécheresse ; ce sont les minima d'été qui la révèlent.
+
+- [ ] Indicateurs d'étiage annuels calculés génériquement sur `QmnJ` : débit
+      minimal annuel (VCN3/VCN10), QMNA, nombre de jours sous un seuil de basse
+      eau, et leur tendance depuis l'ouverture de la station.
+- [ ] Observations ONDE (réseau national d'observation visuelle des étiages) via
+      Hub'Eau `/api/v1/ecoulement/observations` : écoulement visible / non visible
+      / assec. Vérifié le 29/09/2026 : 2 940 observations pour le Calvados, dont
+      « Écoulement non visible » le 23/09/2026. Nouveau fichier de cache par
+      rivière (`onde.json`) produit par un script ETL stdlib.
+- [ ] Optionnel : température de l'eau via Hub'Eau `/api/v1/temperature`
+      (11 stations dans le Calvados) pour éclairer les baisses d'O₂ estivales.
+
+**Fichiers** : `index.html`, `scripts/fetch_onde_data.py` (nouveau),
+`config/rivers.json`, `CLAUDE.md` (contrat de données).
+
 ## À creuser
 
 - [ ] **Station qualité Odon 03243120 inactive** : plus aucune analyse publiée
@@ -79,6 +135,3 @@ pour un visiteur de distinguer « panne de données » de « rien à signaler »
   hygiène mais aucun bug connu sur cette logique aujourd'hui.
 - **Renommage/confirmation du bouton « Actualiser »** (télécharge sans persister) —
   confusion réelle mais purement cosmétique, aucun risque de donnée fausse.
-- **Badge de fraîcheur des données dans le header + onglet Qualité** — valeur UX
-  réelle (`date_max`/`fetched_at` déjà calculés) mais n'adresse aucun risque ;
-  bonne candidate une fois les trois priorités traitées.
