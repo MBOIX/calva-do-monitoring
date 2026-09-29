@@ -145,7 +145,9 @@ Ajout de `"vigieau_zone": "28_14_0001"` (optionnel) sur chaque station hydro.
 
 Commande unique : `python3 -m unittest` (déjà prévue par `CLAUDE.md`).
 
-Note : Chrome headless s'est bloqué avec `--virtual-time-budget` lors de l'ajout de
+Note (mise à jour après exécution) : le lanceur utilise finalement `--virtual-time-budget=30000`,
+indispensable pour que les pages asynchrones terminent avant `--dump-dom`, avec `--timeout`
+et le timeout `subprocess` en garde-fous. Note initiale : Chrome headless s'est bloqué avec `--virtual-time-budget` lors de l'ajout de
 la Seulles ; `--timeout` + timeout `subprocess` ont fonctionné.
 
 ## 6. Documentation

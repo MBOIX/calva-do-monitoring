@@ -62,18 +62,29 @@ pour un visiteur de distinguer « panne de données » de « rien à signaler »
 
 ## Volet sécheresse (produit)
 
-### 4. Encart « Situation actuelle » en tête du dashboard — effort M/L
+### 4. Encart « Situation actuelle » en tête du dashboard — effort M/L — ✅ fait le 2026-09-29
 
 Le dashboard montre des tendances longues mais ne dit pas si la rivière va mal
 **maintenant**. Plan d'implémentation détaillé : `docs/plans/situation-actuelle.md`.
 
-- [ ] Position du dernier débit face à l'historique du même jour de l'année
+- [x] Position du dernier débit face à l'historique du même jour de l'année
       (percentile, libellé « très bas / bas / normal / haut »).
-- [ ] Repères d'étiage calculés sur l'historique (ex. VCN3 quinquennal sec).
-- [ ] Niveau de restriction en vigueur (vigilance → crise) via l'API VigiEau
+- [x] Repères d'étiage calculés sur l'historique (ex. VCN3 quinquennal sec).
+- [x] Niveau de restriction en vigueur (vigilance → crise) via l'API VigiEau
       (`api.vigieau.gouv.fr`, publique, sans clé, CORS `*`).
 
 **Fichiers** : `index.html`, `config/rivers.json`, `CLAUDE.md` (contrat), tests.
+
+Suites relevées par la revue (non bloquantes) :
+
+- [ ] Afficher la ligne Étiage quand le VCN3 estimé vaut 0 (cours d'eau intermittent) :
+      aujourd'hui `buildLowFlowLine` la masque.
+- [ ] Remplacer « rang P0 » par une formulation lisible (« plus bas que toutes les
+      années ») quand le débit est sous tout l'historique de la saison.
+- [ ] Tester un changement rapide de **station** (même rivière) dans `tests/smoke.test.html`.
+- [ ] Vérifier la licence de réutilisation des données VigiEau.
+- [ ] Revérifier les codes `vigieau_zone` à chaque nouvel arrêté-cadre (La Courbe et
+      Tierceville rattachées par déduction : la commune ne renvoie aucune zone).
 
 ### 5. Fraîcheur des données visible et automatisable — effort M
 

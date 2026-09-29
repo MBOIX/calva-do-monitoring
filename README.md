@@ -1,9 +1,18 @@
 # Calva'do — Tableau de bord hydrologique multi cours d'eau
 
-Dashboard statique (HTML/JS) qui visualise les données de plusieurs cours d'eau de Normandie récupérées depuis les API [Hub'Eau](https://hubeau.eaufrance.fr/), avec un **sélecteur de cours d'eau** :
+Dashboard statique (HTML/JS) qui visualise les données de plusieurs cours d'eau de Normandie récupérées depuis les API [Hub'Eau](https://hubeau.eaufrance.fr/) (hydrométrie, qualité) et [VigiEau](https://vigieau.gouv.fr/) (restrictions sécheresse), avec un **sélecteur de cours d'eau** :
 
 - **Orne** (fleuve côtier, dépts 61 & 14)
 - **Odon** (rivière du Calvados, affluent de l'Orne)
+- **Seulles** (fleuve côtier du Bessin, Calvados)
+
+Encart **« Situation actuelle »** (en tête de l'onglet Hydrologie) :
+1. **Position du débit actuel** face à l'historique du même moment de l'année (rang percentile :
+   très bas / bas / normal / haut / très haut).
+2. **Repère d'étiage** : VCN3 quinquennal sec estimé (débit minimal sur 3 jours consécutifs
+   non dépassé à la baisse une année sur cinq, soit plus bas qu'une année sèche sur cinq).
+3. **Niveau de restriction en vigueur** sur la zone de la station (vigilance → alerte →
+   alerte renforcée → crise), avec lien vers l'arrêté préfectoral.
 
 Pour chaque cours d'eau, deux familles de métriques :
 
@@ -93,8 +102,7 @@ pour éviter l'avertissement de dépréciation de Node.js 20.
 
 ## Sources de données
 
-Toutes les mesures proviennent du portail public **[Hub'Eau](https://hubeau.eaufrance.fr/)**
-(Office français de la biodiversité / SANDRE), API v2, accès libre sans clé.
+Deux sources de données publiques :
 
 ### Hydrométrie — `scripts/fetch_hydro_data.py`
 
@@ -109,12 +117,22 @@ Toutes les mesures proviennent du portail public **[Hub'Eau](https://hubeau.eauf
 - **Sélection** : découverte automatique des stations sur le `quality_code` SANDRE du cours d'eau, top 3 par nombre d'analyses
 - **5 paramètres** (codes SANDRE) : 1311 Oxygène dissous, 1302 pH, 1340 Nitrates, 1339 Nitrites, 1335 Ammonium
 
+### Restrictions sécheresse — VigiEau
+
+- **API** : [VigiEau](https://vigieau.gouv.fr/), API publique — endpoint `/api/zones/departement/<dept>`
+- **Consultation** : directe depuis le navigateur (CORS `*`) à chaque affichage (données fraîches, pas de cache)
+- **Zones** : ZAS (zones d'alerte aux sécheresses) de type « SUP » (eaux superficielles),
+  rattachées aux stations par un code `vigieau_zone` déclaré dans `config/rivers.json`
+- **Niveaux affichés** : vigilance, alerte, alerte renforcée, crise
+- **Lien** : arrêté préfectoral PDF (si disponible) via le champ `arrete.cheminFichier`
+
 ### Cours d'eau suivis
 
-| id   | Nom  | Code SANDRE qualité | Stations hydro |
-|------|------|---------------------|----------------|
-| orne | Orne | `I2--0200`          | 9 (dépts 61 & 14) |
-| odon | Odon | `I26-0400`          | 2 (Épinay-sur-Odon depuis 1991, Gavrus depuis 2019) |
+| id     | Nom    | Code SANDRE qualité | Stations hydro |
+|--------|--------|---------------------|----------------|
+| orne   | Orne   | `I2--0200`          | 9 (dépts 61 & 14) |
+| odon   | Odon   | `I26-0400`          | 2 (Épinay-sur-Odon depuis 1991, Gavrus depuis 2019) |
+| seulles | Seulles | `I3--0200`          | 2 (Juvigny-sur-Seulles depuis 1981, Tierceville depuis 1971) |
 
 ### Bibliothèques front (via CDN)
 
@@ -123,6 +141,8 @@ Toutes les mesures proviennent du portail public **[Hub'Eau](https://hubeau.eauf
 
 ### Conditions d'usage
 
-Données publiques sous **[Licence Ouverte Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence)** — réutilisation libre avec mention de la source (Hub'Eau / OFB).
+Données publiques :
+- **Hub'Eau** (hydrométrie + qualité) : **[Licence Ouverte Etalab 2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence)** — réutilisation libre avec mention de la source (Hub'Eau / OFB / SANDRE).
+- **VigiEau** (restrictions sécheresse) : données publiques du **Ministère de la Transition écologique** — source citée sur le site.
 
 
