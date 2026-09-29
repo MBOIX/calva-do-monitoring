@@ -18,7 +18,7 @@ const SETTLE_DELAY_MS = 150;
 
 // Scénario : Seulles (14, zone 0001) en crise, Orne moyenne et Odon (14, zone 0005) en alerte
 // renforcée avec un arrêté en http:// (lien refusé), Orne aval (14, zone 0004) absente
-// de la réponse, Orne amont (61) en erreur HTTP.
+// de la réponse, Orne amont et moyenne (61) en erreur HTTP.
 const SCENARIO = {
   zonesByDepartment: {
     '14': [
@@ -41,6 +41,7 @@ const EXPECTED_BY_ZONE = {
   '28_14_0005': { state: 'restricted', label: 'Alerte renforcée', badgeClass: 'situation-badge--alerte-renforcee' },
   '28_14_0004': { state: 'none' },
   '28_61_0006': { state: 'unavailable' },
+  '28_61_0007': { state: 'unavailable' },
 };
 
 function buildPrelude(scenario, heldDepartments) {
