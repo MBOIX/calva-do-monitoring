@@ -4,14 +4,16 @@
       "code": "I371201001",
       "name": "Épinay-sur-Odon",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0005"
     },
     {
       "code": "I264000101",
       "name": "Gavrus [Pont Neuf]",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0005"
     }
   ],
-  "updated_at": "2026-09-29T13:33:13.103482"
+  "updated_at": "2026-10-27T19:18:51.354644"
 }

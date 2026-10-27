@@ -4,56 +4,65 @@
       "code": "I200101101",
       "name": "Belfonds",
       "dept": "61",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_61_0006"
     },
     {
       "code": "I303101001",
       "name": "Argentan",
       "dept": "61",
-      "has_Q": false
+      "has_Q": false,
+      "vigieau_zone": "28_61_0006"
     },
     {
       "code": "I312101002",
       "name": "La Courbe (Amont)",
       "dept": "61",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_61_0007"
     },
     {
       "code": "I336101001",
       "name": "Mesnil-Villement",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0005"
     },
     {
       "code": "I352102001",
       "name": "Thury-Harcourt",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0005"
     },
     {
       "code": "I353101001",
       "name": "Grimbosq (barrage)",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0005"
     },
     {
       "code": "I362101001",
       "name": "May-sur-Orne",
       "dept": "14",
-      "has_Q": true
+      "has_Q": true,
+      "vigieau_zone": "28_14_0004"
     },
     {
       "code": "I362102001",
       "name": "Louvigny",
       "dept": "14",
-      "has_Q": false
+      "has_Q": false,
+      "vigieau_zone": "28_14_0004"
     },
     {
       "code": "I374101001",
       "name": "Caen (Pont de Vaucelles)",
       "dept": "14",
-      "has_Q": false
+      "has_Q": false,
+      "vigieau_zone": "28_14_0004"
     }
   ],
-  "updated_at": "2026-09-29T13:14:00.063115"
+  "updated_at": "2026-10-27T19:18:50.923662"
 }
