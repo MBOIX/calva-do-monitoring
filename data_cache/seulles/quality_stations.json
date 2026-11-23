@@ -5,22 +5,22 @@
       "name": "LA SEULLES A TIERCEVILLE 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 2543
+      "total_records": 2556
     },
     {
       "code": "03245665",
       "name": "LA SEULLES A ANCTOVILLE 2",
       "longitude": null,
       "latitude": null,
-      "total_records": 1127
+      "total_records": 1132
     },
     {
       "code": "03245840",
       "name": "LA SEULLES A BUCEELS 1",
       "longitude": null,
       "latitude": null,
-      "total_records": 1018
+      "total_records": 1023
     }
   ],
-  "updated_at": "2026-10-27T19:19:15.124735"
+  "updated_at": "2026-11-23T00:00:28.238650"
 }
