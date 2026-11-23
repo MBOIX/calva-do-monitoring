@@ -40,7 +40,8 @@ Flux : `scripts/fetch_*.py` → `data_cache/<id>/{stations.json, quality_station
 
 Vocabulaire métier : `HIXnJ` = hauteur max journalière (mm) ; `QmnJ` = débit moyen journalier
 (L/s) ; qualité = 5 paramètres SANDRE : `1311` O₂, `1302` pH, `1340` nitrates, `1339` nitrites,
-`1335` ammonium.
+`1335` ammonium, **eau uniquement** (fractions `23` eau brute / `3` phase aqueuse ; les analyses
+de sédiments, en mg/kg MS, sont écartées par l'ETL car elles faussent les séries).
 
 `config/rivers.json` déclare par rivière : `id`, `name`, `name_with_article` (optionnel,
 sinon « l'<name> »), `region_label_by_dept`,

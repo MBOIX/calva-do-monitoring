@@ -116,6 +116,7 @@ Deux sources de données publiques :
 - **Producteur** : réseaux DCE (Agences de l'eau, DREAL, OFB) via [SANDRE](https://www.sandre.eaufrance.fr/) et [Naïades](https://naiades.eaufrance.fr/)
 - **Sélection** : découverte automatique des stations sur le `quality_code` SANDRE du cours d'eau, top 3 par nombre d'analyses
 - **5 paramètres** (codes SANDRE) : 1311 Oxygène dissous, 1302 pH, 1340 Nitrates, 1339 Nitrites, 1335 Ammonium
+- **Eau uniquement** : seules les analyses sur la colonne d'eau sont conservées (fractions SANDRE `23` eau brute et `3` phase aqueuse) ; les analyses de sédiments (ex. ammonium en mg/kg MS) sont écartées
 
 ### Restrictions sécheresse — VigiEau
 

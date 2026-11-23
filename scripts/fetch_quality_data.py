@@ -3,7 +3,8 @@
 Fetch physicochemical water quality data from the Hub'Eau API v2 for the rivers
 declared in config/rivers.json. For each river, discovers the top-3 best
 documented quality stations (by SANDRE river code), then downloads O2, pH,
-Nitrates, Nitrites and Ammonium measurements into data_cache/<river_id>/.
+Nitrates, Nitrites and Ammonium measurements made on water (sediment analyses
+are excluded) into data_cache/<river_id>/.
 
 Usage:
     python3 scripts/fetch_quality_data.py                # all rivers, top-3 stations
@@ -19,6 +20,7 @@ import sys
 import time
 import urllib.request
 import urllib.parse
+from collections import Counter
 from datetime import datetime
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +38,11 @@ PARAMETERS = {
     "1335": {"name": "Ammonium", "unit": "mg/L NH₄"},
 }
 PARAM_CODES = list(PARAMETERS.keys())
+
+# SANDRE fractions of the water column: 23 = eau brute, 3 = phase aqueuse (filtrée,
+# centrifugée…). Other fractions (e.g. sediments, in mg/(kg MS)) are not comparable
+# with water concentrations and would show up as spurious peaks in the series.
+WATER_FRACTION_CODES = {"23", "3"}
 
 TOP_N_STATIONS = 3
 RATE_LIMIT_DELAY = 0.15
@@ -138,6 +145,24 @@ def fetch_parameter_records(station_code, param_code, date_start=None):
     return all_records
 
 
+def keep_water_analyses(raw_records):
+    """Drop analyses made on non-water fractions, logging each ignored fraction."""
+    water_records = [r for r in raw_records if is_water_analysis(r)]
+    ignored_fractions = Counter(
+        r.get("libelle_fraction") or r.get("code_fraction") or "unknown"
+        for r in raw_records
+        if not is_water_analysis(r)
+    )
+    for fraction, count in ignored_fractions.items():
+        print(f"      Ignored {count} analyses on non-water fraction: {fraction}")
+    return water_records
+
+
+def is_water_analysis(raw):
+    """True if the analysis was made on the water column (not on sediments…)."""
+    return raw.get("code_fraction") in WATER_FRACTION_CODES
+
+
 def simplify_record(raw):
     """Keep only date and numeric value from a raw API record."""
     date_raw = raw.get("date_prelevement", "")
@@ -204,7 +229,7 @@ def fetch_station_quality(station_info, cache_dir, force_since=None):
                 print(f"    Incremental update from {last_date}")
 
         raw = fetch_parameter_records(station_info["code"], code, date_start)
-        new_records = [simplify_record(r) for r in raw]
+        new_records = [simplify_record(r) for r in keep_water_analyses(raw)]
 
         if existing_records and date_start:
             existing_dates = {r["date"] for r in existing_records}
