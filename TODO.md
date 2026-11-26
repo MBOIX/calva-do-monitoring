@@ -9,6 +9,9 @@ Complété le 29 septembre 2026 par un volet produit lié à la sécheresse (n°
 fin septembre 2026, les secteurs Bessin et Virois du Calvados sont en **crise**,
 Orne moyenne et aval en **alerte renforcée** (source : API VigiEau).
 
+Complété le 24 novembre 2026 par le n° 7 : Hub'Eau sert plusieurs versions d'une même
+analyse qualité, ce qui crée des doublons et fait disparaître des mesures validées.
+
 ## À implémenter (par ordre de priorité)
 
 ### 1. Gate d'intégrité `rivers.json` ↔ `data_cache/` dans le déploiement — effort M
@@ -59,6 +62,32 @@ pour un visiteur de distinguer « panne de données » de « rien à signaler »
       heightData.records.length === 0`, l'inverse sinon.
 
 **Fichiers** : `index.html`
+
+### 7. ETL qualité robuste aux versions des analyses Hub'Eau — effort M
+
+Hub'Eau renvoie parfois plusieurs versions d'une même analyse : 176 doublons
+(contrôlée et validée) sont aujourd'hui comptés deux fois dans le cache. Il lui arrive
+aussi de ne plus servir que la version brute « Analyse non faite » : 9 mesures validées
+de janvier-février 2023 ont ainsi disparu entre fin septembre et novembre 2026. L'incrémental, qui
+reprend à la dernière date en cache, rate en outre les publications tardives et les
+corrections. Plan d'implémentation détaillé, validé le 2026-11-26 :
+`docs/plans/etl-qualite-versions.md`. **Pré-requis** : n° 2 (même fonction
+`save_station_cache`), à faire juste avant. À faire avant `docs/plans/fraicheur-donnees.md`.
+
+- [ ] Stocker l'identifiant (`code_analyse`) et le statut de validation (`code_statut`)
+      de chaque analyse, et fusionner par identifiant : une « non faite » ne remplace
+      jamais une valeur, et une analyse absente de la réponse est conservée et listée
+      dans le rapport de fusion.
+- [ ] Extraction complète à chaque exécution (45 appels d'une page) au lieu de
+      l'incrémental.
+- [ ] Migration manuelle des caches (suppression des 9 fichiers puis extraction
+      complète) et restauration des 9 mesures de 2023 depuis l'historique git
+      (identifiants retrouvés par prélèvement).
+- [ ] Signaler la régression de janvier-février 2023 à Hub'Eau (identifiants dans le plan).
+
+**Fichiers** : `scripts/fetch_quality_data.py`, `tests/test_fetch_quality_data.py`,
+`data_cache/*/*_quality.json`, `CLAUDE.md` (contrat de données), `README.md`,
+`.claude/commands/update-data.md`
 
 ## Volet sécheresse (produit)
 
@@ -142,7 +171,8 @@ La moyenne annuelle masque la sécheresse ; ce sont les minima d'été qui la r�
 - **Isolation des erreurs par station dans les scripts ETL (continue au lieu
   d'avorter)** — confort du mainteneur uniquement, n'affecte jamais les visiteurs
   (données publiées après relecture et commit manuels).
-- **Extraction de `merge_records()` en fonction pure + tests unitaires** — bonne
-  hygiène mais aucun bug connu sur cette logique aujourd'hui.
+- **Extraction de `merge_records()` en fonction pure + tests unitaires** — écartée
+  faute de bug connu ; **réévaluée le 2026-11-24** : bugs avérés, repris côté qualité
+  dans le n° 7 et côté hydro dans `docs/plans/fraicheur-donnees.md`.
 - **Renommage/confirmation du bouton « Actualiser »** (télécharge sans persister) —
   confusion réelle mais purement cosmétique, aucun risque de donnée fausse.
